@@ -1,6 +1,6 @@
 # docsify-wavesurfer-plugin
 
-[docsify-wavesurfer-plugin](https://gllmar.github.io/docsify-wavesurfer-plugin/#/)
+## Introduction
 
 This Docsify plugin converts audio tags and links to audio files into WaveSurfer.js players with native controls. Additionally, it displays the link description as the title of the audio, positioned over the waveform in the top left corner.
 
@@ -18,7 +18,19 @@ https://gllmar.github.io/docsify-wavesurfer-plugin/docsify-wavesurfer-plugin.js
 * Displays link descriptions as titles over the waveform.
 * Native media controls for play, pause, seek, etc.
 
+## Installation
 
+### Download the source code
+
+* You can find the source code on GitHub : [gllmar.github.io/docsify-wavesurfer-plugin](https://gllmar.github.io/docsify-wavesurfer-plugin)
+
+### Add the plugin to your document
+
+```javascript
+  <script src="https://unpkg.com/docsify/lib/docsify.min.js"></script>
+  <script src="https://unpkg.com/wavesurfer.js"></script>
+  <script src="./docsify-wavesurfer-plugin.js"></script>
+```
 
 ## Usage
 
