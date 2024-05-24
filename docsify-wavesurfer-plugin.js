@@ -37,8 +37,11 @@
     wrapper.style.position = 'relative';
     container.appendChild(wrapper);
 
+    const playPauseButton = createPlayPauseButton();
+
+    let title;
     if (description) {
-      const title = document.createElement('div');
+      title = document.createElement('div');
       title.innerText = description;
       title.style.cssText = `
         position: absolute;
@@ -48,8 +51,11 @@
         background-color: rgba(255, 255, 255, 0.7);
         color: black;
         padding: 5px;
+        cursor: pointer;
         z-index: 10;
+        opacity: 0.9;
       `;
+      title.onclick = playPauseButton.onclick;
       wrapper.appendChild(title);
     }
 
@@ -64,13 +70,28 @@
     });
 
     wavesurfer.load(audioSrc);
+    playPauseButton.wavesurfer = wavesurfer;
+    wavesurfer.on('play', () => {
+      playPauseButton.style.backgroundColor = 'darkgrey';
+      playPauseButton.innerHTML = '⏸️';
+      if (title) {
+        title.style.boxShadow = 'inset 0px 0px 5px #000000';
+      }
+    });
+    wavesurfer.on('pause', () => {
+      playPauseButton.style.backgroundColor = 'white';
+      playPauseButton.innerHTML = '▶️';
+      if (title) {
+        title.style.boxShadow = '';
+      }
+    });
 
-    const controlsContainer = createControlsContainer(wavesurfer);
+    const controlsContainer = createControlsContainer(wavesurfer, playPauseButton);
     wrapper.appendChild(controlsContainer);
     container.style.margin = '10px 0';
   }
 
-  function createControlsContainer(wavesurfer) {
+  function createControlsContainer(wavesurfer, playPauseButton) {
     const controlsContainer = document.createElement('div');
     controlsContainer.style.cssText = `
       display: flex;
@@ -79,7 +100,7 @@
       margin-top: 10px;
     `;
 
-    const transportControls = createTransportControls(wavesurfer);
+    const transportControls = createTransportControls(wavesurfer, playPauseButton);
     controlsContainer.appendChild(transportControls);
 
     const speedControlContainer = createSpeedControlContainer(wavesurfer);
@@ -94,7 +115,7 @@
     return controlsContainer;
   }
 
-  function createTransportControls(wavesurfer) {
+  function createTransportControls(wavesurfer, playPauseButton) {
     const transportControls = document.createElement('div');
     transportControls.style.cssText = `
       display: flex;
@@ -102,9 +123,10 @@
       margin-bottom: 10px;
     `;
 
-    transportControls.appendChild(createPlayPauseButton(wavesurfer));
-    transportControls.appendChild(createLoopButton(wavesurfer));
+    transportControls.appendChild(createGoToStartButton(wavesurfer));
+    transportControls.appendChild(playPauseButton);
     transportControls.appendChild(createFastForwardButton(wavesurfer));
+    transportControls.appendChild(createLoopButton(wavesurfer));
     transportControls.appendChild(createSpeedToggleButton());
     transportControls.appendChild(createVolumeToggleButton());
 
@@ -125,11 +147,14 @@
     return button;
   }
 
-  function createPlayPauseButton(wavesurfer) {
+  function createPlayPauseButton() {
     const playPauseBtn = createButton('▶️');
     playPauseBtn.onclick = () => {
-      wavesurfer.playPause();
-      playPauseBtn.innerHTML = wavesurfer.isPlaying() ? '⏸️' : '▶️';
+      if (playPauseBtn.wavesurfer.isPlaying()) {
+        playPauseBtn.wavesurfer.pause();
+      } else {
+        playPauseBtn.wavesurfer.play();
+      }
     };
     return playPauseBtn;
   }
@@ -141,7 +166,7 @@
       isLooping = !isLooping;
       if (isLooping) {
         wavesurfer.on('finish', wavesurfer.play.bind(wavesurfer));
-        loopBtn.style.backgroundColor = 'lightblue';
+        loopBtn.style.backgroundColor = 'darkgrey';
       } else {
         wavesurfer.un('finish', wavesurfer.play.bind(wavesurfer));
         loopBtn.style.backgroundColor = '';
@@ -152,28 +177,40 @@
 
   function createFastForwardButton(wavesurfer) {
     const fastForwardBtn = createButton('⏩');
-    let isFastForwarding = false;
-    fastForwardBtn.onclick = () => {
-      isFastForwarding = !isFastForwarding;
-      if (isFastForwarding) {
-        wavesurfer.setPlaybackRate(wavesurfer.getPlaybackRate() * 10);
-        fastForwardBtn.style.backgroundColor = 'lightblue';
-      } else {
-        wavesurfer.setPlaybackRate(wavesurfer.getPlaybackRate() / 10);
-        fastForwardBtn.style.backgroundColor = '';
-      }
+    let originalSpeed = 1;
+
+    fastForwardBtn.onmousedown = () => {
+      originalSpeed = wavesurfer.getPlaybackRate();
+      wavesurfer.setPlaybackRate(originalSpeed * 10);
+      fastForwardBtn.style.backgroundColor = 'darkgrey';
     };
+
+    fastForwardBtn.onmouseup = () => {
+      wavesurfer.setPlaybackRate(originalSpeed);
+      fastForwardBtn.style.backgroundColor = '';
+    };
+
+    fastForwardBtn.onmouseleave = fastForwardBtn.onmouseup;
+
     return fastForwardBtn;
   }
 
+  function createGoToStartButton(wavesurfer) {
+    const goToStartBtn = createButton('⏮️');
+    goToStartBtn.onclick = () => {
+      wavesurfer.seekTo(0);
+    };
+    return goToStartBtn;
+  }
+
   function createSpeedToggleButton() {
-    const speedToggleBtn = createButton('⚡');
+    const speedToggleBtn = createButton('⏱️');
     speedToggleBtn.onclick = (event) => {
       const controlsContainer = event.currentTarget.closest('div').parentNode;
       const speedControlContainer = controlsContainer.speedControlContainer;
       const isVisible = speedControlContainer.style.display === 'flex';
       speedControlContainer.style.display = isVisible ? 'none' : 'flex';
-      speedToggleBtn.style.backgroundColor = isVisible ? '' : 'lightblue';
+      speedToggleBtn.style.backgroundColor = isVisible ? '' : 'darkgrey';
     };
     return speedToggleBtn;
   }
@@ -185,7 +222,7 @@
       const volumeControlContainer = controlsContainer.volumeControlContainer;
       const isVisible = volumeControlContainer.style.display === 'flex';
       volumeControlContainer.style.display = isVisible ? 'none' : 'flex';
-      volumeToggleBtn.style.backgroundColor = isVisible ? '' : 'lightblue';
+      volumeToggleBtn.style.backgroundColor = isVisible ? '' : 'darkgrey';
     };
     return volumeToggleBtn;
   }
@@ -198,7 +235,7 @@
       margin-bottom: 10px;
     `;
 
-    const speedLabel = createButton('⚡');
+    const speedLabel = createButton('⏱️');
     speedControlContainer.appendChild(speedLabel);
 
     const speedControl = document.createElement('input');
@@ -217,6 +254,10 @@
 
     const speedReadout = document.createElement('span');
     speedReadout.innerHTML = '1.00x';
+    speedReadout.style.cssText = `
+      margin-left: 10px;
+      font-family: monospace;
+    `;
     speedControlContainer.appendChild(speedReadout);
 
     speedLabel.onclick = () => {
@@ -252,11 +293,14 @@
     volumeControlContainer.appendChild(volumeControl);
 
     const volumeReadout = document.createElement('span');
+    volumeReadout.innerHTML = padVolume('100%');
     volumeReadout.style.cssText = `
+      margin-left: 10px;
       width: 40px;
       display: inline-block;
+      text-align: right;
+      font-family: monospace;
     `;
-    volumeReadout.innerHTML = '100%';
     volumeControlContainer.appendChild(volumeReadout);
 
     volumeLabel.onclick = () => {
@@ -269,7 +313,7 @@
   }
 
   function padVolume(volume) {
-    return volume.length < 2 ? '0' + volume : volume;
+    return volume.padStart(3, '0');
   }
 
   window.$docsify.plugins = [].concat(function (hook, vm) {
