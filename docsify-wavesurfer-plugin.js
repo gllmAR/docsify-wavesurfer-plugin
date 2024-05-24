@@ -54,6 +54,7 @@
               cursor: pointer;
               z-index: 10;
               opacity: 0.9;
+              font-size: 12px;
           `;
           title.onclick = playPauseButton.onclick;
           wrapper.appendChild(title);
@@ -67,6 +68,62 @@
           waveColor: waveColor,
           progressColor: progressColor,
           backend: 'MediaElement'
+      });
+
+      const currentTimeLabel = document.createElement('div');
+      currentTimeLabel.style.cssText = `
+          position: absolute;
+          top: 40px;
+          left: 10px;
+          background-color: rgba(255, 255, 255, 0.7);
+          color: black;
+          padding: 5px;
+          z-index: 5;
+          opacity: 0.9;
+          font-family: monospace;
+          font-size: 12px;
+          display: none;
+      `;
+      currentTimeLabel.innerHTML = formatTime(0); // Initialize at zero
+      wrapper.appendChild(currentTimeLabel);
+
+      const totalTimeLabel = document.createElement('div');
+      totalTimeLabel.style.cssText = `
+          position: absolute;
+          top: 40px;
+          right: 10px;
+          background-color: rgba(255, 255, 255, 0.7);
+          color: black;
+          padding: 5px;
+          z-index: 5;
+          opacity: 0.9;
+          font-family: monospace;
+          font-size: 12px;
+          display: none;
+      `;
+      wrapper.appendChild(totalTimeLabel);
+
+      let isLooping = false;
+
+      const updateCurrentTime = () => {
+          const currentTime = wavesurfer.getCurrentTime();
+          currentTimeLabel.innerHTML = formatTime(currentTime);
+          totalTimeLabel.innerHTML = formatTime(wavesurfer.getDuration());
+          if (isLooping) {
+              const startTime = parseTimeInput(document.querySelector('.start-time').value);
+              const endTime = parseTimeInput(document.querySelector('.end-time').value);
+              if (currentTime >= endTime) {
+                  wavesurfer.seekTo(startTime / wavesurfer.getDuration());
+                  wavesurfer.play();
+              }
+          }
+      };
+
+      wavesurfer.on('audioprocess', updateCurrentTime);
+      wavesurfer.on('seek', updateCurrentTime);
+
+      wavesurfer.on('ready', () => {
+          totalTimeLabel.innerHTML = formatTime(wavesurfer.getDuration());
       });
 
       wavesurfer.load(audioSrc);
@@ -91,7 +148,9 @@
       container.style.margin = '10px 0';
 
       // Add settings button to toggle toolbar visibility
-      createSettingsButton(wrapper, controlsContainer);
+      createSettingsButton(wrapper, controlsContainer, currentTimeLabel, totalTimeLabel);
+
+      setInterval(updateCurrentTime, 100); // Update every 100ms
   }
 
   function createControlsContainer(wavesurfer, playPauseButton) {
@@ -118,7 +177,7 @@
       return controlsContainer;
   }
 
-  function createSettingsButton(wrapper, toolbar) {
+  function createSettingsButton(wrapper, toolbar, currentTimeLabel, totalTimeLabel) {
       const settingsButton = document.createElement('button');
       settingsButton.innerHTML = '🔧';
       settingsButton.style.cssText = `
@@ -133,9 +192,36 @@
           z-index: 10;
       `;
       settingsButton.onclick = () => {
-          toolbar.style.display = toolbar.style.display === 'none' ? 'block' : 'none';
+          const isToolbarVisible = toolbar.style.display === 'block';
+          toolbar.style.display = isToolbarVisible ? 'none' : 'block';
+          currentTimeLabel.style.display = isToolbarVisible ? 'none' : 'block';
+          totalTimeLabel.style.display = isToolbarVisible ? 'none' : 'block';
       };
       wrapper.appendChild(settingsButton);
+  }
+
+  function seekToTime(wavesurfer, inputValue) {
+      const time = parseTimeInput(inputValue);
+      if (time !== null) {
+          const isPlaying = wavesurfer.isPlaying();
+          if (isPlaying) wavesurfer.pause();
+          wavesurfer.once('seek', () => {
+              if (isPlaying) wavesurfer.play();
+          });
+          wavesurfer.seekTo(time / wavesurfer.getDuration());
+      }
+  }
+
+  function parseTimeInput(input) {
+      const parts = input.split(':');
+      if (parts.length === 2) {
+          const minutes = parseInt(parts[0], 10);
+          const seconds = parseFloat(parts[1]);
+          if (!isNaN(minutes) && !isNaN(seconds)) {
+              return minutes * 60 + seconds;
+          }
+      }
+      return null;
   }
 
   function createTransportControls(wavesurfer, playPauseButton) {
@@ -263,6 +349,7 @@
       speedReadout.style.cssText = `
           margin-left: 10px;
           font-family: monospace;
+          font-size: 12px;
       `;
       speedControlContainer.appendChild(speedReadout);
 
@@ -316,6 +403,7 @@
           display: inline-block;
           text-align: right;
           font-family: monospace;
+          font-size: 12px;
       `;
       volumeControlContainer.appendChild(volumeReadout);
 
@@ -330,6 +418,13 @@
 
   function padVolume(volume) {
       return volume.padStart(3, '0');
+  }
+
+  function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      const millis = Math.floor((seconds % 1) * 1000);
+      return `${minutes}:${secs < 10 ? '0' : ''}${secs}.${millis < 100 ? '0' : ''}${millis < 10 ? '0' : ''}${millis}`;
   }
 
   window.$docsify.plugins = [].concat(function (hook, vm) {
