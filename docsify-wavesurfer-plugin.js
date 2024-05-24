@@ -148,7 +148,6 @@
 
       transportControls.appendChild(createGoToStartButton(wavesurfer));
       transportControls.appendChild(playPauseButton);
-      transportControls.appendChild(createFastForwardButton(wavesurfer));
       transportControls.appendChild(createLoopButton(wavesurfer));
       transportControls.appendChild(createSpeedToggleButton());
       transportControls.appendChild(createVolumeToggleButton());
@@ -198,26 +197,6 @@
       return loopBtn;
   }
 
-  function createFastForwardButton(wavesurfer) {
-      const fastForwardBtn = createButton('⏩');
-      let originalSpeed = 1;
-
-      fastForwardBtn.onmousedown = () => {
-          originalSpeed = wavesurfer.getPlaybackRate();
-          wavesurfer.setPlaybackRate(originalSpeed * 10);
-          fastForwardBtn.style.backgroundColor = 'darkgrey';
-      };
-
-      fastForwardBtn.onmouseup = () => {
-          wavesurfer.setPlaybackRate(originalSpeed);
-          fastForwardBtn.style.backgroundColor = '';
-      };
-
-      fastForwardBtn.onmouseleave = fastForwardBtn.onmouseup;
-
-      return fastForwardBtn;
-  }
-
   function createGoToStartButton(wavesurfer) {
       const goToStartBtn = createButton('⏮️');
       goToStartBtn.onclick = () => {
@@ -255,7 +234,7 @@
       speedControlContainer.style.cssText = `
           display: none;
           flex-direction: row;
-          justify-content: center; /* Center items horizontally */
+          justify-content: center;
           align-items: center;
           margin-bottom: 10px;
       `;
@@ -265,19 +244,20 @@
 
       const speedControl = document.createElement('input');
       speedControl.type = 'range';
-      speedControl.min = 0.1;
-      speedControl.max = 2;
-      speedControl.step = 0.01;
+      speedControl.min = 0;
+      speedControl.max = 8;
+      speedControl.step = 0.1;
       speedControl.value = 1;
       speedControl.style.margin = '0 10px';
       speedControl.oninput = () => {
-          const speed = parseFloat(speedControl.value);
-          wavesurfer.setPlaybackRate(speed);
-          speedReadout.innerHTML = speed.toFixed(2) + 'x';
+          const actualSpeed = parseFloat(speedControl.value);
+          wavesurfer.setPlaybackRate(actualSpeed);
+          speedReadout.innerHTML = actualSpeed.toFixed(2) + 'x';
       };
       speedControlContainer.appendChild(speedControl);
 
       const speedReadout = document.createElement('span');
+      speedReadout.className = 'speed-readout';
       speedReadout.innerHTML = '1.00x';
       speedReadout.style.cssText = `
           margin-left: 10px;
@@ -299,7 +279,7 @@
       volumeControlContainer.style.cssText = `
           display: none;
           flex-direction: row;
-          justify-content: center; /* Center items horizontally */
+          justify-content: center;
           align-items: center;
       `;
 
