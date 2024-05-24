@@ -53,8 +53,8 @@
       wrapper.appendChild(title);
     }
 
-    const waveColor = getComputedStyle(document.documentElement).getPropertyValue('--wave-color').trim() || '#42b983';
-    const progressColor = getComputedStyle(document.documentElement).getPropertyValue('--progress-color').trim() || '#42b983';
+    const waveColor = getComputedStyle(document.documentElement).getPropertyValue('--wave-color').trim() || '#ababab';
+    const progressColor = getComputedStyle(document.documentElement).getPropertyValue('--progress-color').trim() || '#dadada';
 
     const wavesurfer = WaveSurfer.create({
       container: wrapper,
