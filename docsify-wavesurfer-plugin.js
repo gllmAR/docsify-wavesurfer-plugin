@@ -46,14 +46,15 @@
         left: 0;
         font-weight: bold;
         background-color: rgba(255, 255, 255, 0.7);
+        color: var(--text-color, black);
         padding: 5px;
         z-index: 10;
       `;
       wrapper.appendChild(title);
     }
 
-    // Fetch the theme color from CSS variable
-    const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color') || '#42b983';
+    // Fetch initial theme color
+    const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim() || '#42b983';
 
     const wavesurfer = WaveSurfer.create({
       container: wrapper,
@@ -67,6 +68,9 @@
     const controlsContainer = createControlsContainer(wavesurfer);
     wrapper.appendChild(controlsContainer);
     container.style.margin = '10px 0';
+
+    // Observe changes to the theme color
+    observeThemeColorChanges(wavesurfer);
   }
 
   function createControlsContainer(wavesurfer) {
@@ -272,6 +276,25 @@
 
   function padVolume(volume) {
     return volume.length < 2 ? '0' + volume : volume;
+  }
+
+  function observeThemeColorChanges(wavesurfer) {
+    const observer = new MutationObserver(() => {
+      const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim() || '#42b983';
+      wavesurfer.setOptions({
+        waveColor: themeColor,
+        progressColor: themeColor
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+
+    // Initial color setup
+    const initialThemeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim() || '#42b983';
+    wavesurfer.setOptions({
+      waveColor: initialThemeColor,
+      progressColor: initialThemeColor
+    });
   }
 
   window.$docsify.plugins = [].concat(function (hook, vm) {
