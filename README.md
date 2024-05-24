@@ -2,13 +2,14 @@
 
 ## Introduction
 
-This Docsify plugin converts audio tags and links to audio files into WaveSurfer.js players with native controls. Additionally, it displays the link description as the title of the audio, positioned over the waveform in the top left corner.
+This Docsify plugin converts markdown links to audio files and audio tags into WaveSurfer.js players with custom control. 
+Additionally, it displays the link description as the title of the audio, positioned over the waveform in the top left corner.
 
 
-* [demonstrative ](./media/demonstrative.mp3)
+[demonstrative ](./media/demonstrative.mp3)
 
 ```markdown
-* [demonstrative ](./media/demonstrative.mp3)
+[demonstrative ](./media/demonstrative.mp3)
 ```
 
 ## Features

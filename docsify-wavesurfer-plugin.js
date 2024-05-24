@@ -1,114 +1,159 @@
-// docsify-wavesurfer-plugin.js
-
 (function () {
   function initWaveSurfer() {
-    // Supported audio extensions
-    var supportedAudioExtensions = ['.m4a', '.mp3', '.wav', '.aac', '.wma', '.flac', '.opus', '.ogg'];
+    const supportedAudioExtensions = ['.m4a', '.mp3', '.wav', '.aac', '.wma', '.flac', '.opus', '.ogg'];
 
-    // Handle audio tags
-    var audios = document.querySelectorAll('audio');
-    audios.forEach(function(audio) {
-      var audioSrc = audio.querySelector('source').src;
-      var container = document.createElement('div');
-      audio.parentNode.replaceChild(container, audio);
-      createWaveSurferPlayer(audioSrc, container, null);
-    });
+    handleAudioTags();
+    handleAudioLinks();
 
-    // Handle links to supported audio files
-    var links = document.querySelectorAll('a[href]');
-    links.forEach(function(link) {
-      var url = link.href.toLowerCase();
-      if (supportedAudioExtensions.some(ext => url.endsWith(ext))) {
-        var audioSrc = link.href.replace(/#\//, '');
-        var description = link.innerText || link.textContent;
-        var container = document.createElement('div');
-        link.parentNode.replaceChild(container, link);
-        createWaveSurferPlayer(audioSrc, container, description);
-      }
-    });
+    function handleAudioTags() {
+      const audios = document.querySelectorAll('audio');
+      audios.forEach(audio => {
+        const audioSrc = audio.querySelector('source')?.src;
+        if (audioSrc) {
+          const container = document.createElement('div');
+          audio.parentNode.replaceChild(container, audio);
+          createWaveSurferPlayer(audioSrc, container);
+        }
+      });
+    }
+
+    function handleAudioLinks() {
+      const links = document.querySelectorAll('a[href]');
+      links.forEach(link => {
+        const url = link.href.toLowerCase();
+        if (supportedAudioExtensions.some(ext => url.endsWith(ext))) {
+          const audioSrc = link.href.replace(/#\//, '');
+          const description = link.innerText || link.textContent;
+          const container = document.createElement('div');
+          link.parentNode.replaceChild(container, link);
+          createWaveSurferPlayer(audioSrc, container, description);
+        }
+      });
+    }
   }
 
-  function createWaveSurferPlayer(audioSrc, container, description) {
-    // Create a wrapper for the title and player
-    var wrapper = document.createElement('div');
+  function createWaveSurferPlayer(audioSrc, container, description = '') {
+    const wrapper = document.createElement('div');
     wrapper.style.position = 'relative';
     container.appendChild(wrapper);
 
-    // Create title element if description is provided
     if (description) {
-      var title = document.createElement('div');
+      const title = document.createElement('div');
       title.innerText = description;
-      title.style.position = 'absolute';
-      title.style.top = '0';
-      title.style.left = '0';
-      title.style.fontWeight = 'bold';
-      title.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
-      title.style.padding = '5px';
-      title.style.zIndex = '10';
+      title.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        font-weight: bold;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 5px;
+        z-index: 10;
+      `;
       wrapper.appendChild(title);
     }
 
-    var wavesurfer = WaveSurfer.create({
+    // Fetch the theme color from CSS variable
+    const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color') || '#42b983';
+
+    const wavesurfer = WaveSurfer.create({
       container: wrapper,
-      waveColor: 'violet',
-      progressColor: 'purple',
+      waveColor: themeColor,
+      progressColor: themeColor,
       backend: 'MediaElement'
     });
 
     wavesurfer.load(audioSrc);
 
-    // Create custom controls container
-    var controlsContainer = document.createElement('div');
-    controlsContainer.style.display = 'flex';
-    controlsContainer.style.flexDirection = 'column';
-    controlsContainer.style.alignItems = 'center';
-    controlsContainer.style.marginTop = '10px';
+    const controlsContainer = createControlsContainer(wavesurfer);
     wrapper.appendChild(controlsContainer);
+    container.style.margin = '10px 0';
+  }
 
-    // Transport controls
-    var transportControls = document.createElement('div');
-    transportControls.style.display = 'flex';
-    transportControls.style.justifyContent = 'center';
-    transportControls.style.marginBottom = '10px';
+  function createControlsContainer(wavesurfer) {
+    const controlsContainer = document.createElement('div');
+    controlsContainer.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    `;
+
+    const transportControls = createTransportControls(wavesurfer);
     controlsContainer.appendChild(transportControls);
 
-    // Play/Pause button
-    var playPauseBtn = document.createElement('button');
-    playPauseBtn.innerHTML = '▶️';
-    playPauseBtn.style.margin = '0 5px';
-    playPauseBtn.onclick = function () {
+    const speedControlContainer = createSpeedControlContainer(wavesurfer);
+    controlsContainer.appendChild(speedControlContainer);
+
+    const volumeControlContainer = createVolumeControlContainer(wavesurfer);
+    controlsContainer.appendChild(volumeControlContainer);
+
+    // Store the containers globally for toggling visibility
+    controlsContainer.speedControlContainer = speedControlContainer;
+    controlsContainer.volumeControlContainer = volumeControlContainer;
+
+    return controlsContainer;
+  }
+
+  function createTransportControls(wavesurfer) {
+    const transportControls = document.createElement('div');
+    transportControls.style.cssText = `
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    `;
+
+    transportControls.appendChild(createPlayPauseButton(wavesurfer));
+    transportControls.appendChild(createLoopButton(wavesurfer));
+    transportControls.appendChild(createFastForwardButton(wavesurfer));
+    transportControls.appendChild(createSpeedToggleButton());
+    transportControls.appendChild(createVolumeToggleButton());
+
+    return transportControls;
+  }
+
+  function createButton(icon) {
+    const button = document.createElement('button');
+    button.style.cssText = `
+      margin: 0 5px;
+      background: var(--button-bg, white);
+      border: var(--button-border, 1px solid black);
+      border-radius: var(--button-border-radius, 4px);
+      cursor: pointer;
+      padding: 5px;
+    `;
+    button.innerHTML = icon;
+    return button;
+  }
+
+  function createPlayPauseButton(wavesurfer) {
+    const playPauseBtn = createButton('▶️');
+    playPauseBtn.onclick = () => {
       wavesurfer.playPause();
       playPauseBtn.innerHTML = wavesurfer.isPlaying() ? '⏸️' : '▶️';
     };
-    transportControls.appendChild(playPauseBtn);
+    return playPauseBtn;
+  }
 
-    // Loop button
-    var loopBtn = document.createElement('button');
-    loopBtn.innerHTML = '🔁';
-    loopBtn.style.margin = '0 5px';
-    var isLooping = false;
-    loopBtn.onclick = function () {
+  function createLoopButton(wavesurfer) {
+    const loopBtn = createButton('🔁');
+    let isLooping = false;
+    loopBtn.onclick = () => {
       isLooping = !isLooping;
       if (isLooping) {
-        wavesurfer.on('finish', function () {
-          wavesurfer.play();
-        });
+        wavesurfer.on('finish', wavesurfer.play.bind(wavesurfer));
         loopBtn.style.backgroundColor = 'lightblue';
       } else {
-        wavesurfer.un('finish', function () {
-          wavesurfer.play();
-        });
+        wavesurfer.un('finish', wavesurfer.play.bind(wavesurfer));
         loopBtn.style.backgroundColor = '';
       }
     };
-    transportControls.appendChild(loopBtn);
+    return loopBtn;
+  }
 
-    // Fast Forward button
-    var fastForwardBtn = document.createElement('button');
-    fastForwardBtn.innerHTML = '⏩';
-    fastForwardBtn.style.margin = '0 5px';
-    var isFastForwarding = false;
-    fastForwardBtn.onclick = function () {
+  function createFastForwardButton(wavesurfer) {
+    const fastForwardBtn = createButton('⏩');
+    let isFastForwarding = false;
+    fastForwardBtn.onclick = () => {
       isFastForwarding = !isFastForwarding;
       if (isFastForwarding) {
         wavesurfer.setPlaybackRate(wavesurfer.getPlaybackRate() * 10);
@@ -118,101 +163,119 @@
         fastForwardBtn.style.backgroundColor = '';
       }
     };
-    transportControls.appendChild(fastForwardBtn);
+    return fastForwardBtn;
+  }
 
-    // Speed toggle button
-    var speedToggleBtn = document.createElement('button');
-    speedToggleBtn.innerHTML = '⚡';
-    speedToggleBtn.style.margin = '0 5px';
-    var isSpeedVisible = false;
-    speedToggleBtn.onclick = function () {
-      isSpeedVisible = !isSpeedVisible;
-      speedControlContainer.style.display = isSpeedVisible ? 'flex' : 'none';
-      speedToggleBtn.style.backgroundColor = isSpeedVisible ? 'lightblue' : '';
+  function createSpeedToggleButton() {
+    const speedToggleBtn = createButton('⚡');
+    speedToggleBtn.onclick = (event) => {
+      const controlsContainer = event.currentTarget.closest('div').parentNode;
+      const speedControlContainer = controlsContainer.speedControlContainer;
+      const isVisible = speedControlContainer.style.display === 'flex';
+      speedControlContainer.style.display = isVisible ? 'none' : 'flex';
+      speedToggleBtn.style.backgroundColor = isVisible ? '' : 'lightblue';
     };
-    transportControls.appendChild(speedToggleBtn);
+    return speedToggleBtn;
+  }
 
-    // Volume toggle button
-    var volumeToggleBtn = document.createElement('button');
-    volumeToggleBtn.innerHTML = '🔊';
-    volumeToggleBtn.style.margin = '0 5px';
-    var isVolumeVisible = false;
-    volumeToggleBtn.onclick = function () {
-      isVolumeVisible = !isVolumeVisible;
-      volumeControlContainer.style.display = isVolumeVisible ? 'flex' : 'none';
-      volumeToggleBtn.style.backgroundColor = isVolumeVisible ? 'lightblue' : '';
+  function createVolumeToggleButton() {
+    const volumeToggleBtn = createButton('🔊');
+    volumeToggleBtn.onclick = (event) => {
+      const controlsContainer = event.currentTarget.closest('div').parentNode;
+      const volumeControlContainer = controlsContainer.volumeControlContainer;
+      const isVisible = volumeControlContainer.style.display === 'flex';
+      volumeControlContainer.style.display = isVisible ? 'none' : 'flex';
+      volumeToggleBtn.style.backgroundColor = isVisible ? '' : 'lightblue';
     };
-    transportControls.appendChild(volumeToggleBtn);
+    return volumeToggleBtn;
+  }
 
-    // Speed control
-    var speedControlContainer = document.createElement('div');
-    speedControlContainer.style.display = 'none';
-    speedControlContainer.style.alignItems = 'center';
-    speedControlContainer.style.marginBottom = '10px';
-    controlsContainer.appendChild(speedControlContainer);
+  function createSpeedControlContainer(wavesurfer) {
+    const speedControlContainer = document.createElement('div');
+    speedControlContainer.style.cssText = `
+      display: none;
+      align-items: center;
+      margin-bottom: 10px;
+    `;
 
-    var speedLabel = document.createElement('span');
-    speedLabel.innerHTML = '⚡';
+    const speedLabel = createButton('⚡');
     speedControlContainer.appendChild(speedLabel);
 
-    var speedControl = document.createElement('input');
+    const speedControl = document.createElement('input');
     speedControl.type = 'range';
     speedControl.min = 0.1;
     speedControl.max = 2;
     speedControl.step = 0.01;
     speedControl.value = 1;
     speedControl.style.margin = '0 10px';
-    speedControl.oninput = function () {
-      var speed = parseFloat(speedControl.value);
+    speedControl.oninput = () => {
+      const speed = parseFloat(speedControl.value);
       wavesurfer.setPlaybackRate(speed);
       speedReadout.innerHTML = speed.toFixed(2) + 'x';
     };
     speedControlContainer.appendChild(speedControl);
 
-    var speedReadout = document.createElement('span');
+    const speedReadout = document.createElement('span');
     speedReadout.innerHTML = '1.00x';
     speedControlContainer.appendChild(speedReadout);
 
-    // Volume control
-    var volumeControlContainer = document.createElement('div');
-    volumeControlContainer.style.display = 'none';
-    volumeControlContainer.style.alignItems = 'center';
-    controlsContainer.appendChild(volumeControlContainer);
+    // Reset speed to default on label click
+    speedLabel.onclick = () => {
+      speedControl.value = 1;
+      wavesurfer.setPlaybackRate(1);
+      speedReadout.innerHTML = '1.00x';
+    };
 
-    var volumeLabel = document.createElement('span');
-    volumeLabel.innerHTML = '🔊';
+    return speedControlContainer;
+  }
+
+  function createVolumeControlContainer(wavesurfer) {
+    const volumeControlContainer = document.createElement('div');
+    volumeControlContainer.style.cssText = `
+      display: none;
+      align-items: center;
+    `;
+
+    const volumeLabel = createButton('🔊');
     volumeControlContainer.appendChild(volumeLabel);
 
-    var volumeControl = document.createElement('input');
+    const volumeControl = document.createElement('input');
     volumeControl.type = 'range';
     volumeControl.min = 0;
     volumeControl.max = 1;
     volumeControl.step = 0.01;
     volumeControl.value = wavesurfer.getVolume();
     volumeControl.style.margin = '0 10px';
-    volumeControl.oninput = function () {
+    volumeControl.oninput = () => {
       wavesurfer.setVolume(volumeControl.value);
       volumeReadout.innerHTML = padVolume((volumeControl.value * 100).toFixed(0)) + '%';
     };
     volumeControlContainer.appendChild(volumeControl);
 
-    var volumeReadout = document.createElement('span');
-    volumeReadout.style.width = '40px'; // Ensures the width is consistent
-    volumeReadout.style.display = 'inline-block'; // Makes the width fixed
+    const volumeReadout = document.createElement('span');
+    volumeReadout.style.cssText = `
+      width: 40px;
+      display: inline-block;
+    `;
     volumeReadout.innerHTML = '100%';
     volumeControlContainer.appendChild(volumeReadout);
 
-    // Helper function to pad volume percentage
-    function padVolume(volume) {
-      return volume.length < 2 ? '0' + volume : volume;
-    }
+    // Reset volume to default on label click
+    volumeLabel.onclick = () => {
+      volumeControl.value = 1;
+      wavesurfer.setVolume(1);
+      volumeReadout.innerHTML = '100%';
+    };
 
-    // Optional: Styling the container
-    container.style.margin = '10px 0';
+    return volumeControlContainer;
+  }
+
+  function padVolume(volume) {
+    return volume.length < 2 ? '0' + volume : volume;
   }
 
   window.$docsify.plugins = [].concat(function (hook, vm) {
-    hook.doneEach(function () {
+    hook.doneEach(() => {
       initWaveSurfer();
     });
   }, window.$docsify.plugins);
