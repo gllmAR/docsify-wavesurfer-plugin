@@ -7,22 +7,28 @@ This Docsify plugin converts audio tags and links to audio files into WaveSurfer
 
 * [demonstrative ](./media/demonstrative.mp3)
 
-```
-https://gllmar.github.io/docsify-wavesurfer-plugin/docsify-wavesurfer-plugin.js
+```markdown
+* [demonstrative ](./media/demonstrative.mp3)
 ```
 
 ## Features
 
-* Converts audio tags and links to audio files into WaveSurfer.js players.
+* Converts markdown links to audio files and audio tags to WaveSurfer.js players.
 * Supports various audio file extensions: .m4a, .mp3, .wav, .aac, .wma, .flac, .opus, .ogg.
 * Displays link descriptions as titles over the waveform.
-* Native media controls for play, pause, seek, etc.
+* Custom controls button for 
+  * play/pause, 
+  * Toggle loop
+  * Playback speed 
+  * Volume
 
 ## Installation
 
 ### Download the source code
 
-* You can find the source code on GitHub : [gllmar.github.io/docsify-wavesurfer-plugin](https://gllmar.github.io/docsify-wavesurfer-plugin)
+
+* [Source code on Github](https://github.com/gllmAR/docsify-wavesurfer-plugin)
+* [Demonstration](https://gllmar.github.io/docsify-wavesurfer-plugin)
 
 ### Add the plugin to your document
 
@@ -36,10 +42,12 @@ https://gllmar.github.io/docsify-wavesurfer-plugin/docsify-wavesurfer-plugin.js
 
 ### Audio Example with Audio Tag
 
+```html
 <audio>
   <source src="path/to/your/audiofile.mp3" type="audio/mpeg">
   Your browser does not support the audio element.
 </audio>
+```
 
 Audio Links
 
