@@ -33,11 +33,19 @@ Additionally, it displays the link description as the title of the audio, positi
 
 ### Add the plugin to your document
 
+```html
+  <script src="https://unpkg.com/docsify/lib/docsify.min.js"></script>
+  <script type="module">
+    import { initWaveSurfer } from './docsify-wavesurfer-plugin.js';
+    initWaveSurfer();
+  </script>
+```
+<!-- 
 ```javascript
   <script src="https://unpkg.com/docsify/lib/docsify.min.js"></script>
   <script src="https://unpkg.com/wavesurfer.js"></script>
   <script src="./docsify-wavesurfer-plugin.js"></script>
-```
+``` -->
 
 ## Usage
 

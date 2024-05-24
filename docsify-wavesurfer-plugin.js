@@ -1,35 +1,50 @@
-(function () {
-  function initWaveSurfer() {
-      const supportedAudioExtensions = ['.m4a', '.mp3', '.wav', '.aac', '.wma', '.flac', '.opus', '.ogg'];
+export function initWaveSurfer() {
+  const supportedAudioExtensions = ['.m4a', '.mp3', '.wav', '.aac', '.wma', '.flac', '.opus', '.ogg'];
 
+  loadWaveSurferLibrary().then(() => {
       handleAudioTags();
       handleAudioLinks();
+  });
 
-      function handleAudioTags() {
-          const audios = document.querySelectorAll('audio');
-          audios.forEach(audio => {
-              const audioSrc = audio.querySelector('source')?.src;
-              if (audioSrc) {
-                  const container = document.createElement('div');
-                  audio.parentNode.replaceChild(container, audio);
-                  createWaveSurferPlayer(audioSrc, container);
-              }
-          });
-      }
+  function loadWaveSurferLibrary() {
+      return new Promise((resolve, reject) => {
+          if (typeof WaveSurfer !== 'undefined') {
+              resolve();
+              return;
+          }
 
-      function handleAudioLinks() {
-          const links = document.querySelectorAll('a[href]');
-          links.forEach(link => {
-              const url = link.href.toLowerCase();
-              if (supportedAudioExtensions.some(ext => url.endsWith(ext))) {
-                  const audioSrc = link.href.replace(/#\//, '');
-                  const description = link.innerText || link.textContent;
-                  const container = document.createElement('div');
-                  link.parentNode.replaceChild(container, link);
-                  createWaveSurferPlayer(audioSrc, container, description);
-              }
-          });
-      }
+          const script = document.createElement('script');
+          script.src = 'https://unpkg.com/wavesurfer.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+      });
+  }
+
+  function handleAudioTags() {
+      const audios = document.querySelectorAll('audio');
+      audios.forEach(audio => {
+          const audioSrc = audio.querySelector('source')?.src;
+          if (audioSrc) {
+              const container = document.createElement('div');
+              audio.parentNode.replaceChild(container, audio);
+              createWaveSurferPlayer(audioSrc, container);
+          }
+      });
+  }
+
+  function handleAudioLinks() {
+      const links = document.querySelectorAll('a[href]');
+      links.forEach(link => {
+          const url = link.href.toLowerCase();
+          if (supportedAudioExtensions.some(ext => url.endsWith(ext))) {
+              const audioSrc = link.href.replace(/#\//, '');
+              const description = link.innerText || link.textContent;
+              const container = document.createElement('div');
+              link.parentNode.replaceChild(container, link);
+              createWaveSurferPlayer(audioSrc, container, description);
+          }
+      });
   }
 
   function createWaveSurferPlayer(audioSrc, container, description = '') {
@@ -432,4 +447,4 @@
           initWaveSurfer();
       });
   }, window.$docsify.plugins);
-})();
+}
