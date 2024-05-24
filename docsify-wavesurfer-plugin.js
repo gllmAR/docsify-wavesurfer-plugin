@@ -46,20 +46,20 @@
         left: 0;
         font-weight: bold;
         background-color: rgba(255, 255, 255, 0.7);
-        color: var(--text-color, black);
+        color: black;
         padding: 5px;
         z-index: 10;
       `;
       wrapper.appendChild(title);
     }
 
-    // Fetch initial theme color
-    const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim() || '#42b983';
+    const waveColor = getComputedStyle(document.documentElement).getPropertyValue('--wave-color').trim() || '#42b983';
+    const progressColor = getComputedStyle(document.documentElement).getPropertyValue('--progress-color').trim() || '#42b983';
 
     const wavesurfer = WaveSurfer.create({
       container: wrapper,
-      waveColor: themeColor,
-      progressColor: themeColor,
+      waveColor: waveColor,
+      progressColor: progressColor,
       backend: 'MediaElement'
     });
 
@@ -68,9 +68,6 @@
     const controlsContainer = createControlsContainer(wavesurfer);
     wrapper.appendChild(controlsContainer);
     container.style.margin = '10px 0';
-
-    // Observe changes to the theme color
-    observeThemeColorChanges(wavesurfer);
   }
 
   function createControlsContainer(wavesurfer) {
@@ -91,7 +88,6 @@
     const volumeControlContainer = createVolumeControlContainer(wavesurfer);
     controlsContainer.appendChild(volumeControlContainer);
 
-    // Store the containers globally for toggling visibility
     controlsContainer.speedControlContainer = speedControlContainer;
     controlsContainer.volumeControlContainer = volumeControlContainer;
 
@@ -119,9 +115,9 @@
     const button = document.createElement('button');
     button.style.cssText = `
       margin: 0 5px;
-      background: var(--button-bg, white);
-      border: var(--button-border, 1px solid black);
-      border-radius: var(--button-border-radius, 4px);
+      background: white;
+      border: 1px solid black;
+      border-radius: 4px;
       cursor: pointer;
       padding: 5px;
     `;
@@ -223,7 +219,6 @@
     speedReadout.innerHTML = '1.00x';
     speedControlContainer.appendChild(speedReadout);
 
-    // Reset speed to default on label click
     speedLabel.onclick = () => {
       speedControl.value = 1;
       wavesurfer.setPlaybackRate(1);
@@ -264,7 +259,6 @@
     volumeReadout.innerHTML = '100%';
     volumeControlContainer.appendChild(volumeReadout);
 
-    // Reset volume to default on label click
     volumeLabel.onclick = () => {
       volumeControl.value = 1;
       wavesurfer.setVolume(1);
@@ -276,25 +270,6 @@
 
   function padVolume(volume) {
     return volume.length < 2 ? '0' + volume : volume;
-  }
-
-  function observeThemeColorChanges(wavesurfer) {
-    const observer = new MutationObserver(() => {
-      const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim() || '#42b983';
-      wavesurfer.setOptions({
-        waveColor: themeColor,
-        progressColor: themeColor
-      });
-    });
-
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
-
-    // Initial color setup
-    const initialThemeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim() || '#42b983';
-    wavesurfer.setOptions({
-      waveColor: initialThemeColor,
-      progressColor: initialThemeColor
-    });
   }
 
   window.$docsify.plugins = [].concat(function (hook, vm) {
