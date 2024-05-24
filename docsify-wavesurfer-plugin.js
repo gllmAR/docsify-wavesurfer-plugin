@@ -245,12 +245,13 @@
       const speedControl = document.createElement('input');
       speedControl.type = 'range';
       speedControl.min = 0;
-      speedControl.max = 8;
-      speedControl.step = 0.1;
-      speedControl.value = 1;
+      speedControl.max = 100;
+      speedControl.step = 1;
+      speedControl.value = 50;
       speedControl.style.margin = '0 10px';
       speedControl.oninput = () => {
-          const actualSpeed = parseFloat(speedControl.value);
+          const sliderValue = parseFloat(speedControl.value);
+          const actualSpeed = mapSliderValueToSpeed(sliderValue);
           wavesurfer.setPlaybackRate(actualSpeed);
           speedReadout.innerHTML = actualSpeed.toFixed(2) + 'x';
       };
@@ -266,12 +267,20 @@
       speedControlContainer.appendChild(speedReadout);
 
       speedLabel.onclick = () => {
-          speedControl.value = 1;
+          speedControl.value = 50;
           wavesurfer.setPlaybackRate(1);
           speedReadout.innerHTML = '1.00x';
       };
 
       return speedControlContainer;
+  }
+
+  function mapSliderValueToSpeed(value) {
+      if (value < 50) {
+          return value / 50;  // Maps 0-50 to 0-1
+      } else {
+          return 1 + (value - 50) * 0.14; // Maps 50-100 to 1-8
+      }
   }
 
   function createVolumeControlContainer(wavesurfer) {
