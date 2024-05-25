@@ -2,8 +2,8 @@ import WaveSurfer from 'https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js
 
 // Constants
 const SUPPORTED_AUDIO_EXTENSIONS = ['.m4a', '.mp3', '.wav', '.aac', '.wma', '.flac', '.opus', '.ogg'];
-const DEFAULT_WAVE_COLOR = '#ababab';
-const DEFAULT_PROGRESS_COLOR = '#dadada';
+const DEFAULT_WAVE_COLOR = '#cacaca';
+const DEFAULT_PROGRESS_COLOR = '#aaaaaa';
 const UPDATE_INTERVAL = 100; // 100ms for updating the current time
 
 export function initWaveSurfer() {
@@ -143,7 +143,8 @@ function createDescriptionLabel(description, wavesurfer) {
         cursor: 'pointer',
         opacity: '0.9',
         fontSize: '12px',
-        marginRight: 'auto'
+        marginRight: 'auto',
+        borderRadius: '5px' // Rounded corners
     });
     descriptionLabel.onclick = () => togglePlayPause(wavesurfer);
     return descriptionLabel;
@@ -323,7 +324,10 @@ function createSpeedReadout() {
     Object.assign(speedReadout.style, {
         fontFamily: 'monospace',
         fontSize: '12px',
-        marginLeft: '10px'
+        marginLeft: '10px',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)', // Light label background
+        color: 'black', // Black text color
+        borderRadius: '5px' // Rounded corners
     });
     return speedReadout;
 }
@@ -396,7 +400,10 @@ function createVolumeReadout() {
     Object.assign(volumeReadout.style, {
         fontFamily: 'monospace',
         fontSize: '12px',
-        marginLeft: '10px'
+        marginLeft: '10px',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)', // Light label background
+        color: 'black', // Black text color
+        borderRadius: '5px' // Rounded corners
     });
     return volumeReadout;
 }
@@ -405,7 +412,7 @@ function createTimeRatioContainer(wrapper) {
     const timeRatioContainer = document.createElement('div');
     timeRatioContainer.className = 'time-ratio-container';
     Object.assign(timeRatioContainer.style, {
-        display: 'none',
+        display: 'none', // Hide by default
         position: 'absolute',
         top: '90px',
         left: '50%',
@@ -415,8 +422,9 @@ function createTimeRatioContainer(wrapper) {
         borderRadius: '5px',
         textAlign: 'center',
         fontSize: '10px',
-        width: 'auto',
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        lineHeight: '1', // Set to 1 for the height to match the font size
+        zIndex: '20' // Ensure it is rendered over the waveform
     });
 
     const ratioLabel = createRatioLabel();
@@ -425,8 +433,16 @@ function createTimeRatioContainer(wrapper) {
     wrapper.appendChild(timeRatioContainer);
 
     timeRatioContainer.ratioLabel = ratioLabel;
+
+    // Pass clicks through the time ratio container to the waveform
+    timeRatioContainer.onclick = event => {
+        event.stopPropagation();
+    };
+
     return timeRatioContainer;
 }
+
+
 
 function createRatioLabel() {
     const ratioLabel = document.createElement('span');
@@ -434,7 +450,7 @@ function createRatioLabel() {
     Object.assign(ratioLabel.style, {
         fontFamily: 'monospace',
         fontSize: '10px',
-        color: 'black'
+        color: 'black' // Black text color
     });
     return ratioLabel;
 }
@@ -461,3 +477,4 @@ window.$docsify.plugins = [].concat(function (hook, vm) {
         initWaveSurfer();
     });
 }, window.$docsify.plugins);
+
