@@ -23,7 +23,7 @@ Additionally, it displays the link description as the title of the audio, positi
 | 1   | 2    | 
 | --- |  --- |
 | [jinglebellssms ](./media/jinglebellssms.mp3) | [demonstrative](./media/demonstrative.mp3) |
-| [solemn ](./media/solemn.mp3) | [isntit_a_super_long_label with space and special char %](./media/isntit.mp3) |
+| [solemn ](./media/solemn.mp3) | [isntit_a_super_long_label with space and special *char* %](./media/isntit.mp3) |
 
 ## 1 x 2
 

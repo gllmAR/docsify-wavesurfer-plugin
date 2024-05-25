@@ -81,7 +81,7 @@ export function initWaveSurfer() {
             container: wrapper,
             waveColor: waveColor,
             progressColor: progressColor,
-            backend: 'MediaElement'
+            backend: 'MediaElementWebAudio'
         });
 
         const timeRatioContainer = createTimeRatioContainer(wavesurfer);
