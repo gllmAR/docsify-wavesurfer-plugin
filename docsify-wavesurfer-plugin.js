@@ -1,450 +1,439 @@
+import WaveSurfer from 'https://unpkg.com/wavesurfer.js@7.7.15/dist/wavesurfer.esm.js';
+import RegionsPlugin from 'https://unpkg.com/wavesurfer.js@7.7.15/dist/plugins/regions.esm.js';
+
 export function initWaveSurfer() {
-  const supportedAudioExtensions = ['.m4a', '.mp3', '.wav', '.aac', '.wma', '.flac', '.opus', '.ogg'];
+    const supportedAudioExtensions = ['.m4a', '.mp3', '.wav', '.aac', '.wma', '.flac', '.opus', '.ogg'];
 
-  loadWaveSurferLibrary().then(() => {
-      handleAudioTags();
-      handleAudioLinks();
-  });
+    handleAudioTags();
+    handleAudioLinks();
 
-  function loadWaveSurferLibrary() {
-      return new Promise((resolve, reject) => {
-          if (typeof WaveSurfer !== 'undefined') {
-              resolve();
-              return;
-          }
+    function handleAudioTags() {
+        const audios = document.querySelectorAll('audio');
+        audios.forEach(audio => {
+            const audioSrc = audio.querySelector('source')?.src;
+            if (audioSrc) {
+                const container = document.createElement('div');
+                audio.parentNode.replaceChild(container, audio);
+                createWaveSurferPlayer(audioSrc, container);
+            }
+        });
+    }
 
-          const script = document.createElement('script');
-          script.src = 'https://unpkg.com/wavesurfer.js';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-      });
-  }
+    function handleAudioLinks() {
+        const links = document.querySelectorAll('a[href]');
+        links.forEach(link => {
+            const url = link.href.toLowerCase();
+            if (supportedAudioExtensions.some(ext => url.endsWith(ext))) {
+                const audioSrc = link.href.replace(/#\//, '');
+                const description = link.innerText || link.textContent;
+                const container = document.createElement('div');
+                link.parentNode.replaceChild(container, link);
+                createWaveSurferPlayer(audioSrc, container, description);
+            }
+        });
+    }
 
-  function handleAudioTags() {
-      const audios = document.querySelectorAll('audio');
-      audios.forEach(audio => {
-          const audioSrc = audio.querySelector('source')?.src;
-          if (audioSrc) {
-              const container = document.createElement('div');
-              audio.parentNode.replaceChild(container, audio);
-              createWaveSurferPlayer(audioSrc, container);
-          }
-      });
-  }
+    function createWaveSurferPlayer(audioSrc, container, description = '') {
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        container.appendChild(wrapper);
 
-  function handleAudioLinks() {
-      const links = document.querySelectorAll('a[href]');
-      links.forEach(link => {
-          const url = link.href.toLowerCase();
-          if (supportedAudioExtensions.some(ext => url.endsWith(ext))) {
-              const audioSrc = link.href.replace(/#\//, '');
-              const description = link.innerText || link.textContent;
-              const container = document.createElement('div');
-              link.parentNode.replaceChild(container, link);
-              createWaveSurferPlayer(audioSrc, container, description);
-          }
-      });
-  }
+        const playPauseButton = createPlayPauseButton();
 
-  function createWaveSurferPlayer(audioSrc, container, description = '') {
-      const wrapper = document.createElement('div');
-      wrapper.style.position = 'relative';
-      container.appendChild(wrapper);
+        let title;
+        if (description) {
+            title = document.createElement('div');
+            title.innerText = description;
+            title.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                font-weight: bold;
+                background-color: rgba(255, 255, 255, 0.7);
+                color: black;
+                padding: 5px;
+                cursor: pointer;
+                z-index: 10;
+                opacity: 0.9;
+                font-size: 12px;
+            `;
+            title.onclick = playPauseButton.onclick;
+            wrapper.appendChild(title);
+        }
 
-      const playPauseButton = createPlayPauseButton();
+        const waveColor = getComputedStyle(document.documentElement).getPropertyValue('--wave-color').trim() || '#ababab';
+        const progressColor = getComputedStyle(document.documentElement).getPropertyValue('--progress-color').trim() || '#dadada';
 
-      let title;
-      if (description) {
-          title = document.createElement('div');
-          title.innerText = description;
-          title.style.cssText = `
-              position: absolute;
-              top: 0;
-              left: 0;
-              font-weight: bold;
-              background-color: rgba(255, 255, 255, 0.7);
-              color: black;
-              padding: 5px;
-              cursor: pointer;
-              z-index: 10;
-              opacity: 0.9;
-              font-size: 12px;
-          `;
-          title.onclick = playPauseButton.onclick;
-          wrapper.appendChild(title);
-      }
+        const wavesurfer = WaveSurfer.create({
+            container: wrapper,
+            waveColor: waveColor,
+            progressColor: progressColor,
+            backend: 'MediaElement',
+            plugins: [
+                RegionsPlugin.create()
+            ]
+        });
 
-      const waveColor = getComputedStyle(document.documentElement).getPropertyValue('--wave-color').trim() || '#ababab';
-      const progressColor = getComputedStyle(document.documentElement).getPropertyValue('--progress-color').trim() || '#dadada';
+        const currentTimeLabel = document.createElement('div');
+        currentTimeLabel.style.cssText = `
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            color: black;
+            padding: 5px;
+            z-index: 5;
+            opacity: 0.9;
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+        `;
+        currentTimeLabel.innerHTML = formatTime(0); // Initialize at zero
+        wrapper.appendChild(currentTimeLabel);
 
-      const wavesurfer = WaveSurfer.create({
-          container: wrapper,
-          waveColor: waveColor,
-          progressColor: progressColor,
-          backend: 'MediaElement'
-      });
+        const totalTimeLabel = document.createElement('div');
+        totalTimeLabel.style.cssText = `
+            position: absolute;
+            top: 40px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            color: black;
+            padding: 5px;
+            z-index: 5;
+            opacity: 0.9;
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+        `;
+        wrapper.appendChild(totalTimeLabel);
 
-      const currentTimeLabel = document.createElement('div');
-      currentTimeLabel.style.cssText = `
-          position: absolute;
-          top: 40px;
-          left: 10px;
-          background-color: rgba(255, 255, 255, 0.7);
-          color: black;
-          padding: 5px;
-          z-index: 5;
-          opacity: 0.9;
-          font-family: monospace;
-          font-size: 12px;
-          display: none;
-      `;
-      currentTimeLabel.innerHTML = formatTime(0); // Initialize at zero
-      wrapper.appendChild(currentTimeLabel);
+        let isLooping = false;
 
-      const totalTimeLabel = document.createElement('div');
-      totalTimeLabel.style.cssText = `
-          position: absolute;
-          top: 40px;
-          right: 10px;
-          background-color: rgba(255, 255, 255, 0.7);
-          color: black;
-          padding: 5px;
-          z-index: 5;
-          opacity: 0.9;
-          font-family: monospace;
-          font-size: 12px;
-          display: none;
-      `;
-      wrapper.appendChild(totalTimeLabel);
+        const updateCurrentTime = () => {
+            const currentTime = wavesurfer.getCurrentTime();
+            currentTimeLabel.innerHTML = formatTime(currentTime);
+            totalTimeLabel.innerHTML = formatTime(wavesurfer.getDuration());
+            if (isLooping) {
+                const startTime = parseTimeInput(document.querySelector('.start-time').value);
+                const endTime = parseTimeInput(document.querySelector('.end-time').value);
+                if (currentTime >= endTime) {
+                    wavesurfer.seekTo(startTime / wavesurfer.getDuration());
+                    wavesurfer.play();
+                }
+            }
+        };
 
-      let isLooping = false;
+        wavesurfer.on('audioprocess', updateCurrentTime);
+        wavesurfer.on('seek', updateCurrentTime);
 
-      const updateCurrentTime = () => {
-          const currentTime = wavesurfer.getCurrentTime();
-          currentTimeLabel.innerHTML = formatTime(currentTime);
-          totalTimeLabel.innerHTML = formatTime(wavesurfer.getDuration());
-          if (isLooping) {
-              const startTime = parseTimeInput(document.querySelector('.start-time').value);
-              const endTime = parseTimeInput(document.querySelector('.end-time').value);
-              if (currentTime >= endTime) {
-                  wavesurfer.seekTo(startTime / wavesurfer.getDuration());
-                  wavesurfer.play();
-              }
-          }
-      };
+        wavesurfer.on('ready', () => {
+            totalTimeLabel.innerHTML = formatTime(wavesurfer.getDuration());
+        });
 
-      wavesurfer.on('audioprocess', updateCurrentTime);
-      wavesurfer.on('seek', updateCurrentTime);
+        wavesurfer.load(audioSrc);
+        playPauseButton.wavesurfer = wavesurfer;
+        wavesurfer.on('play', () => {
+            playPauseButton.style.backgroundColor = 'darkgrey';
+            playPauseButton.innerHTML = '⏸️';
+            if (title) {
+                title.style.boxShadow = 'inset 0px 0px 5px #000000';
+            }
+        });
+        wavesurfer.on('pause', () => {
+            playPauseButton.style.backgroundColor = 'white';
+            playPauseButton.innerHTML = '▶️';
+            if (title) {
+                title.style.boxShadow = '';
+            }
+        });
 
-      wavesurfer.on('ready', () => {
-          totalTimeLabel.innerHTML = formatTime(wavesurfer.getDuration());
-      });
+        const controlsContainer = createControlsContainer(wavesurfer, playPauseButton);
+        wrapper.appendChild(controlsContainer);
+        container.style.margin = '10px 0';
 
-      wavesurfer.load(audioSrc);
-      playPauseButton.wavesurfer = wavesurfer;
-      wavesurfer.on('play', () => {
-          playPauseButton.style.backgroundColor = 'darkgrey';
-          playPauseButton.innerHTML = '⏸️';
-          if (title) {
-              title.style.boxShadow = 'inset 0px 0px 5px #000000';
-          }
-      });
-      wavesurfer.on('pause', () => {
-          playPauseButton.style.backgroundColor = 'white';
-          playPauseButton.innerHTML = '▶️';
-          if (title) {
-              title.style.boxShadow = '';
-          }
-      });
+        // Add settings button to toggle toolbar visibility
+        createSettingsButton(wrapper, controlsContainer, currentTimeLabel, totalTimeLabel);
 
-      const controlsContainer = createControlsContainer(wavesurfer, playPauseButton);
-      wrapper.appendChild(controlsContainer);
-      container.style.margin = '10px 0';
+        setInterval(updateCurrentTime, 100); // Update every 100ms
+    }
 
-      // Add settings button to toggle toolbar visibility
-      createSettingsButton(wrapper, controlsContainer, currentTimeLabel, totalTimeLabel);
+    function createControlsContainer(wavesurfer, playPauseButton) {
+        const controlsContainer = document.createElement('div');
+        controlsContainer.style.cssText = `
+            display: none; /* Hide toolbar by default */
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        `;
 
-      setInterval(updateCurrentTime, 100); // Update every 100ms
-  }
+        const transportControls = createTransportControls(wavesurfer, playPauseButton);
+        controlsContainer.appendChild(transportControls);
 
-  function createControlsContainer(wavesurfer, playPauseButton) {
-      const controlsContainer = document.createElement('div');
-      controlsContainer.style.cssText = `
-          display: none; /* Hide toolbar by default */
-          flex-direction: column;
-          align-items: center;
-          margin-top: 10px;
-      `;
+        const speedControlContainer = createSpeedControlContainer(wavesurfer);
+        controlsContainer.appendChild(speedControlContainer);
 
-      const transportControls = createTransportControls(wavesurfer, playPauseButton);
-      controlsContainer.appendChild(transportControls);
+        const volumeControlContainer = createVolumeControlContainer(wavesurfer);
+        controlsContainer.appendChild(volumeControlContainer);
 
-      const speedControlContainer = createSpeedControlContainer(wavesurfer);
-      controlsContainer.appendChild(speedControlContainer);
+        controlsContainer.speedControlContainer = speedControlContainer;
+        controlsContainer.volumeControlContainer = volumeControlContainer;
 
-      const volumeControlContainer = createVolumeControlContainer(wavesurfer);
-      controlsContainer.appendChild(volumeControlContainer);
+        return controlsContainer;
+    }
 
-      controlsContainer.speedControlContainer = speedControlContainer;
-      controlsContainer.volumeControlContainer = volumeControlContainer;
+    function createSettingsButton(wrapper, toolbar, currentTimeLabel, totalTimeLabel) {
+        const settingsButton = document.createElement('button');
+        settingsButton.innerHTML = '🔧';
+        settingsButton.style.cssText = `
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: white;
+            border: 1px solid black;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 5px;
+            z-index: 10;
+        `;
+        settingsButton.onclick = () => {
+            const isToolbarVisible = toolbar.style.display === 'block';
+            toolbar.style.display = isToolbarVisible ? 'none' : 'block';
+            currentTimeLabel.style.display = isToolbarVisible ? 'none' : 'block';
+            totalTimeLabel.style.display = isToolbarVisible ? 'none' : 'block';
+        };
+        wrapper.appendChild(settingsButton);
+    }
 
-      return controlsContainer;
-  }
+    function seekToTime(wavesurfer, inputValue) {
+        const time = parseTimeInput(inputValue);
+        if (time !== null) {
+            const isPlaying = wavesurfer.isPlaying();
+            if (isPlaying) wavesurfer.pause();
+            wavesurfer.once('seek', () => {
+                if (isPlaying) wavesurfer.play();
+            });
+            wavesurfer.seekTo(time / wavesurfer.getDuration());
+        }
+    }
 
-  function createSettingsButton(wrapper, toolbar, currentTimeLabel, totalTimeLabel) {
-      const settingsButton = document.createElement('button');
-      settingsButton.innerHTML = '🔧';
-      settingsButton.style.cssText = `
-          position: absolute;
-          top: 5px;
-          right: 5px;
-          background: white;
-          border: 1px solid black;
-          border-radius: 4px;
-          cursor: pointer;
-          padding: 5px;
-          z-index: 10;
-      `;
-      settingsButton.onclick = () => {
-          const isToolbarVisible = toolbar.style.display === 'block';
-          toolbar.style.display = isToolbarVisible ? 'none' : 'block';
-          currentTimeLabel.style.display = isToolbarVisible ? 'none' : 'block';
-          totalTimeLabel.style.display = isToolbarVisible ? 'none' : 'block';
-      };
-      wrapper.appendChild(settingsButton);
-  }
+    function parseTimeInput(input) {
+        const parts = input.split(':');
+        if (parts.length === 2) {
+            const minutes = parseInt(parts[0], 10);
+            const seconds = parseFloat(parts[1]);
+            if (!isNaN(minutes) && !isNaN(seconds)) {
+                return minutes * 60 + seconds;
+            }
+        }
+        return null;
+    }
 
-  function seekToTime(wavesurfer, inputValue) {
-      const time = parseTimeInput(inputValue);
-      if (time !== null) {
-          const isPlaying = wavesurfer.isPlaying();
-          if (isPlaying) wavesurfer.pause();
-          wavesurfer.once('seek', () => {
-              if (isPlaying) wavesurfer.play();
-          });
-          wavesurfer.seekTo(time / wavesurfer.getDuration());
-      }
-  }
+    function createTransportControls(wavesurfer, playPauseButton) {
+        const transportControls = document.createElement('div');
+        transportControls.style.cssText = `
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        `;
 
-  function parseTimeInput(input) {
-      const parts = input.split(':');
-      if (parts.length === 2) {
-          const minutes = parseInt(parts[0], 10);
-          const seconds = parseFloat(parts[1]);
-          if (!isNaN(minutes) && !isNaN(seconds)) {
-              return minutes * 60 + seconds;
-          }
-      }
-      return null;
-  }
+        transportControls.appendChild(createGoToStartButton(wavesurfer));
+        transportControls.appendChild(playPauseButton);
+        transportControls.appendChild(createLoopButton(wavesurfer));
+        transportControls.appendChild(createSpeedToggleButton());
+        transportControls.appendChild(createVolumeToggleButton());
 
-  function createTransportControls(wavesurfer, playPauseButton) {
-      const transportControls = document.createElement('div');
-      transportControls.style.cssText = `
-          display: flex;
-          justify-content: center;
-          margin-bottom: 10px;
-      `;
+        return transportControls;
+    }
 
-      transportControls.appendChild(createGoToStartButton(wavesurfer));
-      transportControls.appendChild(playPauseButton);
-      transportControls.appendChild(createLoopButton(wavesurfer));
-      transportControls.appendChild(createSpeedToggleButton());
-      transportControls.appendChild(createVolumeToggleButton());
+    function createButton(icon) {
+        const button = document.createElement('button');
+        button.style.cssText = `
+            margin: 0 5px;
+            background: white;
+            border: 1px solid black;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 5px;
+        `;
+        button.innerHTML = icon;
+        return button;
+    }
 
-      return transportControls;
-  }
+    function createPlayPauseButton() {
+        const playPauseBtn = createButton('▶️');
+        playPauseBtn.onclick = () => {
+            if (playPauseBtn.wavesurfer.isPlaying()) {
+                playPauseBtn.wavesurfer.pause();
+            } else {
+                playPauseBtn.wavesurfer.play();
+            }
+        };
+        return playPauseBtn;
+    }
 
-  function createButton(icon) {
-      const button = document.createElement('button');
-      button.style.cssText = `
-          margin: 0 5px;
-          background: white;
-          border: 1px solid black;
-          border-radius: 4px;
-          cursor: pointer;
-          padding: 5px;
-      `;
-      button.innerHTML = icon;
-      return button;
-  }
+    function createLoopButton(wavesurfer) {
+        const loopBtn = createButton('🔁');
+        let isLooping = false;
+        loopBtn.onclick = () => {
+            isLooping = !isLooping;
+            if (isLooping) {
+                wavesurfer.on('finish', wavesurfer.play.bind(wavesurfer));
+                loopBtn.style.backgroundColor = 'darkgrey';
+            } else {
+                wavesurfer.un('finish', wavesurfer.play.bind(wavesurfer));
+                loopBtn.style.backgroundColor = '';
+            }
+        };
+        return loopBtn;
+    }
 
-  function createPlayPauseButton() {
-      const playPauseBtn = createButton('▶️');
-      playPauseBtn.onclick = () => {
-          if (playPauseBtn.wavesurfer.isPlaying()) {
-              playPauseBtn.wavesurfer.pause();
-          } else {
-              playPauseBtn.wavesurfer.play();
-          }
-      };
-      return playPauseBtn;
-  }
+    function createGoToStartButton(wavesurfer) {
+        const goToStartBtn = createButton('⏮️');
+        goToStartBtn.onclick = () => {
+            wavesurfer.seekTo(0);
+        };
+        return goToStartBtn;
+    }
 
-  function createLoopButton(wavesurfer) {
-      const loopBtn = createButton('🔁');
-      let isLooping = false;
-      loopBtn.onclick = () => {
-          isLooping = !isLooping;
-          if (isLooping) {
-              wavesurfer.on('finish', wavesurfer.play.bind(wavesurfer));
-              loopBtn.style.backgroundColor = 'darkgrey';
-          } else {
-              wavesurfer.un('finish', wavesurfer.play.bind(wavesurfer));
-              loopBtn.style.backgroundColor = '';
-          }
-      };
-      return loopBtn;
-  }
+    function createSpeedToggleButton() {
+        const speedToggleBtn = createButton('⏱️');
+        speedToggleBtn.onclick = (event) => {
+            const controlsContainer = event.currentTarget.closest('div').parentNode;
+            const speedControlContainer = controlsContainer.speedControlContainer;
+            const isVisible = speedControlContainer.style.display === 'flex';
+            speedControlContainer.style.display = isVisible ? 'none' : 'flex';
+            speedToggleBtn.style.backgroundColor = isVisible ? '' : 'darkgrey';
+        };
+        return speedToggleBtn;
+    }
 
-  function createGoToStartButton(wavesurfer) {
-      const goToStartBtn = createButton('⏮️');
-      goToStartBtn.onclick = () => {
-          wavesurfer.seekTo(0);
-      };
-      return goToStartBtn;
-  }
+    function createVolumeToggleButton() {
+        const volumeToggleBtn = createButton('🔊');
+        volumeToggleBtn.onclick = (event) => {
+            const controlsContainer = event.currentTarget.closest('div').parentNode;
+            const volumeControlContainer = controlsContainer.volumeControlContainer;
+            const isVisible = volumeControlContainer.style.display === 'flex';
+            volumeControlContainer.style.display = isVisible ? 'none' : 'flex';
+            volumeToggleBtn.style.backgroundColor = isVisible ? '' : 'darkgrey';
+        };
+        return volumeToggleBtn;
+    }
 
-  function createSpeedToggleButton() {
-      const speedToggleBtn = createButton('⏱️');
-      speedToggleBtn.onclick = (event) => {
-          const controlsContainer = event.currentTarget.closest('div').parentNode;
-          const speedControlContainer = controlsContainer.speedControlContainer;
-          const isVisible = speedControlContainer.style.display === 'flex';
-          speedControlContainer.style.display = isVisible ? 'none' : 'flex';
-          speedToggleBtn.style.backgroundColor = isVisible ? '' : 'darkgrey';
-      };
-      return speedToggleBtn;
-  }
+    function createSpeedControlContainer(wavesurfer) {
+        const speedControlContainer = document.createElement('div');
+        speedControlContainer.style.cssText = `
+            display: none;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        `;
 
-  function createVolumeToggleButton() {
-      const volumeToggleBtn = createButton('🔊');
-      volumeToggleBtn.onclick = (event) => {
-          const controlsContainer = event.currentTarget.closest('div').parentNode;
-          const volumeControlContainer = controlsContainer.volumeControlContainer;
-          const isVisible = volumeControlContainer.style.display === 'flex';
-          volumeControlContainer.style.display = isVisible ? 'none' : 'flex';
-          volumeToggleBtn.style.backgroundColor = isVisible ? '' : 'darkgrey';
-      };
-      return volumeToggleBtn;
-  }
+        const speedLabel = createButton('⏱️');
+        speedControlContainer.appendChild(speedLabel);
 
-  function createSpeedControlContainer(wavesurfer) {
-      const speedControlContainer = document.createElement('div');
-      speedControlContainer.style.cssText = `
-          display: none;
-          flex-direction: row;
-          justify-content: center;
-          align-items: center;
-          margin-bottom: 10px;
-      `;
+        const speedControl = document.createElement('input');
+        speedControl.type = 'range';
+        speedControl.min = 0;
+        speedControl.max = 100;
+        speedControl.step = 1;
+        speedControl.value = 50;
+        speedControl.style.margin = '0 10px';
+        speedControl.oninput = () => {
+            const sliderValue = parseFloat(speedControl.value);
+            const actualSpeed = mapSliderValueToSpeed(sliderValue);
+            wavesurfer.setPlaybackRate(actualSpeed);
+            speedReadout.innerHTML = actualSpeed.toFixed(2) + 'x';
+        };
+        speedControlContainer.appendChild(speedControl);
 
-      const speedLabel = createButton('⏱️');
-      speedControlContainer.appendChild(speedLabel);
+        const speedReadout = document.createElement('span');
+        speedReadout.className = 'speed-readout';
+        speedReadout.innerHTML = '1.00x';
+        speedReadout.style.cssText = `
+            margin-left: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        `;
+        speedControlContainer.appendChild(speedReadout);
 
-      const speedControl = document.createElement('input');
-      speedControl.type = 'range';
-      speedControl.min = 0;
-      speedControl.max = 100;
-      speedControl.step = 1;
-      speedControl.value = 50;
-      speedControl.style.margin = '0 10px';
-      speedControl.oninput = () => {
-          const sliderValue = parseFloat(speedControl.value);
-          const actualSpeed = mapSliderValueToSpeed(sliderValue);
-          wavesurfer.setPlaybackRate(actualSpeed);
-          speedReadout.innerHTML = actualSpeed.toFixed(2) + 'x';
-      };
-      speedControlContainer.appendChild(speedControl);
+        speedLabel.onclick = () => {
+            speedControl.value = 50;
+            wavesurfer.setPlaybackRate(1);
+            speedReadout.innerHTML = '1.00x';
+        };
 
-      const speedReadout = document.createElement('span');
-      speedReadout.className = 'speed-readout';
-      speedReadout.innerHTML = '1.00x';
-      speedReadout.style.cssText = `
-          margin-left: 10px;
-          font-family: monospace;
-          font-size: 12px;
-      `;
-      speedControlContainer.appendChild(speedReadout);
+        return speedControlContainer;
+    }
 
-      speedLabel.onclick = () => {
-          speedControl.value = 50;
-          wavesurfer.setPlaybackRate(1);
-          speedReadout.innerHTML = '1.00x';
-      };
+    function mapSliderValueToSpeed(value) {
+        if (value < 50) {
+            return value / 50;  // Maps 0-50 to 0-1
+        } else {
+            return 1 + (value - 50) * 0.14; // Maps 50-100 to 1-8
+        }
+    }
 
-      return speedControlContainer;
-  }
+    function createVolumeControlContainer(wavesurfer) {
+        const volumeControlContainer = document.createElement('div');
+        volumeControlContainer.style.cssText = `
+            display: none;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+        `;
 
-  function mapSliderValueToSpeed(value) {
-      if (value < 50) {
-          return value / 50;  // Maps 0-50 to 0-1
-      } else {
-          return 1 + (value - 50) * 0.14; // Maps 50-100 to 1-8
-      }
-  }
+        const volumeLabel = createButton('🔊');
+        volumeControlContainer.appendChild(volumeLabel);
 
-  function createVolumeControlContainer(wavesurfer) {
-      const volumeControlContainer = document.createElement('div');
-      volumeControlContainer.style.cssText = `
-          display: none;
-          flex-direction: row;
-          justify-content: center;
-          align-items: center;
-      `;
+        const volumeControl = document.createElement('input');
+        volumeControl.type = 'range';
+        volumeControl.min = 0;
+        volumeControl.max = 1;
+        volumeControl.step = 0.01;
+        volumeControl.value = wavesurfer.getVolume();
+        volumeControl.style.margin = '0 10px';
+        volumeControl.oninput = () => {
+            wavesurfer.setVolume(volumeControl.value);
+            volumeReadout.innerHTML = padVolume((volumeControl.value * 100).toFixed(0)) + '%';
+        };
+        volumeControlContainer.appendChild(volumeControl);
 
-      const volumeLabel = createButton('🔊');
-      volumeControlContainer.appendChild(volumeLabel);
+        const volumeReadout = document.createElement('span');
+        volumeReadout.innerHTML = padVolume('100%');
+        volumeReadout.style.cssText = `
+            margin-left: 10px;
+            width: 40px;
+            display: inline-block;
+            text-align: right;
+            font-family: monospace;
+            font-size: 12px;
+        `;
+        volumeControlContainer.appendChild(volumeReadout);
 
-      const volumeControl = document.createElement('input');
-      volumeControl.type = 'range';
-      volumeControl.min = 0;
-      volumeControl.max = 1;
-      volumeControl.step = 0.01;
-      volumeControl.value = wavesurfer.getVolume();
-      volumeControl.style.margin = '0 10px';
-      volumeControl.oninput = () => {
-          wavesurfer.setVolume(volumeControl.value);
-          volumeReadout.innerHTML = padVolume((volumeControl.value * 100).toFixed(0)) + '%';
-      };
-      volumeControlContainer.appendChild(volumeControl);
+        volumeLabel.onclick = () => {
+            volumeControl.value = 1;
+            wavesurfer.setVolume(1);
+            volumeReadout.innerHTML = '100%';
+        };
 
-      const volumeReadout = document.createElement('span');
-      volumeReadout.innerHTML = padVolume('100%');
-      volumeReadout.style.cssText = `
-          margin-left: 10px;
-          width: 40px;
-          display: inline-block;
-          text-align: right;
-          font-family: monospace;
-          font-size: 12px;
-      `;
-      volumeControlContainer.appendChild(volumeReadout);
+        return volumeControlContainer;
+    }
 
-      volumeLabel.onclick = () => {
-          volumeControl.value = 1;
-          wavesurfer.setVolume(1);
-          volumeReadout.innerHTML = '100%';
-      };
+    function padVolume(volume) {
+        return volume.padStart(3, '0');
+    }
 
-      return volumeControlContainer;
-  }
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        const millis = Math.floor((seconds % 1) * 1000);
+        return `${minutes}:${secs < 10 ? '0' : ''}${secs}.${millis < 100 ? '0' : ''}${millis < 10 ? '0' : ''}${millis}`;
+    }
 
-  function padVolume(volume) {
-      return volume.padStart(3, '0');
-  }
-
-  function formatTime(seconds) {
-      const minutes = Math.floor(seconds / 60);
-      const secs = Math.floor(seconds % 60);
-      const millis = Math.floor((seconds % 1) * 1000);
-      return `${minutes}:${secs < 10 ? '0' : ''}${secs}.${millis < 100 ? '0' : ''}${millis < 10 ? '0' : ''}${millis}`;
-  }
-
-  window.$docsify.plugins = [].concat(function (hook, vm) {
-      hook.doneEach(() => {
-          initWaveSurfer();
-      });
-  }, window.$docsify.plugins);
+    window.$docsify.plugins = [].concat(function (hook, vm) {
+        hook.doneEach(() => {
+            initWaveSurfer();
+        });
+    }, window.$docsify.plugins);
 }
