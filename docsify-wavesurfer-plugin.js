@@ -60,25 +60,27 @@ function createWaveSurferPlayer(audioSrc, container, description = '') {
 
 function createWrapper(container) {
     const wrapper = document.createElement('div');
-    wrapper.style.position = 'relative';
-    wrapper.style.minWidth = '264px';
-    wrapper.style.minHeight = '60px';
+    Object.assign(wrapper.style, {
+        position: 'relative',
+        minWidth: '264px',
+        minHeight: '60px'
+    });
     container.appendChild(wrapper);
     return wrapper;
 }
 
 function createToolbar(wrapper) {
     const toolbarContainer = document.createElement('div');
-    toolbarContainer.style.cssText = `
-        position: absolute;
-        top: 5px;
-        left: 5px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: calc(100% - 10px);
-        z-index: 10;
-    `;
+    Object.assign(toolbarContainer.style, {
+        position: 'absolute',
+        top: '5px',
+        left: '5px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: 'calc(100% - 10px)',
+        zIndex: '10'
+    });
     wrapper.appendChild(toolbarContainer);
     return toolbarContainer;
 }
@@ -133,16 +135,16 @@ function createPlayPauseButton() {
 function createDescriptionLabel(description, wavesurfer) {
     const descriptionLabel = document.createElement('div');
     descriptionLabel.innerText = description;
-    descriptionLabel.style.cssText = `
-        font-weight: bold;
-        background-color: rgba(255, 255, 255, 0.7);
-        color: black;
-        padding: 5px;
-        cursor: pointer;
-        opacity: 0.9;
-        font-size: 12px;
-        margin-right: auto;
-    `;
+    Object.assign(descriptionLabel.style, {
+        fontWeight: 'bold',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        color: 'black',
+        padding: '5px',
+        cursor: 'pointer',
+        opacity: '0.9',
+        fontSize: '12px',
+        marginRight: 'auto'
+    });
     descriptionLabel.onclick = () => togglePlayPause(wavesurfer);
     return descriptionLabel;
 }
@@ -150,12 +152,12 @@ function createDescriptionLabel(description, wavesurfer) {
 function createControlsContainer(wavesurfer, playPauseButton, timeRatioContainer) {
     const controlsContainer = document.createElement('div');
     controlsContainer.className = 'controls-container';
-    controlsContainer.style.cssText = `
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        margin-top: 10px;
-    `;
+    Object.assign(controlsContainer.style, {
+        display: 'none',
+        flexDirection: 'column',
+        alignItems: 'center',
+        marginTop: '10px'
+    });
 
     controlsContainer.appendChild(createTransportControls(wavesurfer, playPauseButton));
     controlsContainer.appendChild(createSpeedControlContainer(wavesurfer));
@@ -167,12 +169,12 @@ function createControlsContainer(wavesurfer, playPauseButton, timeRatioContainer
 
 function createTransportControls(wavesurfer, playPauseButton) {
     const transportControls = document.createElement('div');
-    transportControls.style.cssText = `
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 10px;
-    `;
+    Object.assign(transportControls.style, {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: '10px'
+    });
 
     transportControls.appendChild(createGoToStartButton(wavesurfer));
     transportControls.appendChild(playPauseButton);
@@ -186,13 +188,13 @@ function createTransportControls(wavesurfer, playPauseButton) {
 
 function createButton(icon) {
     const button = document.createElement('button');
-    button.style.cssText = `
-        background: white;
-        border: 1px solid black;
-        border-radius: 4px;
-        cursor: pointer;
-        padding: 5px;
-    `;
+    Object.assign(button.style, {
+        background: 'white',
+        border: '1px solid black',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        padding: '5px'
+    });
     button.innerHTML = icon;
     return button;
 }
@@ -260,24 +262,24 @@ function createTimeRatioToggleButton() {
 function createSpeedControlContainer(wavesurfer) {
     const speedControlContainer = document.createElement('div');
     speedControlContainer.className = 'speed-control-container';
-    speedControlContainer.style.cssText = `
-        display: none;
-        flex-direction: row;
-        align-items: center;
-        margin-bottom: 10px;
-        width: 100%;
-    `;
+    Object.assign(speedControlContainer.style, {
+        display: 'none',
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: '10px',
+        width: '100%'
+    });
 
     const speedLabel = createButton('⏱️');
     speedLabel.style.marginRight = '10px';
     speedControlContainer.appendChild(speedLabel);
 
     const speedControlWrapper = document.createElement('div');
-    speedControlWrapper.style.cssText = `
-        flex: 1;
-        display: flex;
-        align-items: center;
-    `;
+    Object.assign(speedControlWrapper.style, {
+        flex: '1',
+        display: 'flex',
+        alignItems: 'center'
+    });
     speedControlContainer.appendChild(speedControlWrapper);
 
     const speedControl = createSpeedControl(wavesurfer);
@@ -318,11 +320,11 @@ function createSpeedReadout() {
     const speedReadout = document.createElement('span');
     speedReadout.className = 'speed-readout';
     speedReadout.innerHTML = '1.00x';
-    speedReadout.style.cssText = `
-        font-family: monospace;
-        font-size: 12px;
-        margin-left: 10px;
-    `;
+    Object.assign(speedReadout.style, {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        marginLeft: '10px'
+    });
     return speedReadout;
 }
 
@@ -337,23 +339,23 @@ function mapSliderValueToSpeed(value) {
 function createVolumeControlContainer(wavesurfer) {
     const volumeControlContainer = document.createElement('div');
     volumeControlContainer.className = 'volume-control-container';
-    volumeControlContainer.style.cssText = `
-        display: none;
-        flex-direction: row;
-        align-items: center;
-        width: 100%;
-    `;
+    Object.assign(volumeControlContainer.style, {
+        display: 'none',
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%'
+    });
 
     const volumeLabel = createButton('🔊');
     volumeLabel.style.marginRight = '10px';
     volumeControlContainer.appendChild(volumeLabel);
 
     const volumeControlWrapper = document.createElement('div');
-    volumeControlWrapper.style.cssText = `
-        flex: 1;
-        display: flex;
-        align-items: center;
-    `;
+    Object.assign(volumeControlWrapper.style, {
+        flex: '1',
+        display: 'flex',
+        alignItems: 'center'
+    });
     volumeControlContainer.appendChild(volumeControlWrapper);
 
     const volumeControl = createVolumeControl(wavesurfer);
@@ -391,31 +393,31 @@ function createVolumeControl(wavesurfer) {
 function createVolumeReadout() {
     const volumeReadout = document.createElement('span');
     volumeReadout.innerHTML = padVolume('100%');
-    volumeReadout.style.cssText = `
-        font-family: monospace;
-        font-size: 12px;
-        margin-left: 10px;
-    `;
+    Object.assign(volumeReadout.style, {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        marginLeft: '10px'
+    });
     return volumeReadout;
 }
 
 function createTimeRatioContainer(wrapper) {
     const timeRatioContainer = document.createElement('div');
     timeRatioContainer.className = 'time-ratio-container';
-    timeRatioContainer.style.cssText = `
-        display: none;
-        position: absolute;
-        top: 90px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(255, 255, 255, 0.8);
-        padding: 5px;
-        border-radius: 5px;
-        text-align: center;
-        font-size: 10px;
-        width: auto;
-        white-space: nowrap;
-    `;
+    Object.assign(timeRatioContainer.style, {
+        display: 'none',
+        position: 'absolute',
+        top: '90px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        padding: '5px',
+        borderRadius: '5px',
+        textAlign: 'center',
+        fontSize: '10px',
+        width: 'auto',
+        whiteSpace: 'nowrap'
+    });
 
     const ratioLabel = createRatioLabel();
     timeRatioContainer.appendChild(ratioLabel);
@@ -429,11 +431,11 @@ function createTimeRatioContainer(wrapper) {
 function createRatioLabel() {
     const ratioLabel = document.createElement('span');
     ratioLabel.className = 'ratio-label';
-    ratioLabel.style.cssText = `
-        font-family: monospace;
-        font-size: 10px;
-        color: black;
-    `;
+    Object.assign(ratioLabel.style, {
+        fontFamily: 'monospace',
+        fontSize: '10px',
+        color: 'black'
+    });
     return ratioLabel;
 }
 
