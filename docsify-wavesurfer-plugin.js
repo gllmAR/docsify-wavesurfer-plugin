@@ -1,5 +1,4 @@
-import WaveSurfer from 'https://unpkg.com/wavesurfer.js@7.7.15/dist/wavesurfer.esm.js';
-import RegionsPlugin from 'https://unpkg.com/wavesurfer.js@7.7.15/dist/plugins/regions.esm.js';
+import WaveSurfer from 'https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js';
 
 export function initWaveSurfer() {
     const supportedAudioExtensions = ['.m4a', '.mp3', '.wav', '.aac', '.wma', '.flac', '.opus', '.ogg'];
@@ -68,10 +67,7 @@ export function initWaveSurfer() {
             container: wrapper,
             waveColor: waveColor,
             progressColor: progressColor,
-            backend: 'MediaElement',
-            plugins: [
-                RegionsPlugin.create()
-            ]
+            backend: 'MediaElement'
         });
 
         const currentTimeLabel = document.createElement('div');
@@ -107,20 +103,10 @@ export function initWaveSurfer() {
         `;
         wrapper.appendChild(totalTimeLabel);
 
-        let isLooping = false;
-
         const updateCurrentTime = () => {
             const currentTime = wavesurfer.getCurrentTime();
             currentTimeLabel.innerHTML = formatTime(currentTime);
             totalTimeLabel.innerHTML = formatTime(wavesurfer.getDuration());
-            if (isLooping) {
-                const startTime = parseTimeInput(document.querySelector('.start-time').value);
-                const endTime = parseTimeInput(document.querySelector('.end-time').value);
-                if (currentTime >= endTime) {
-                    wavesurfer.seekTo(startTime / wavesurfer.getDuration());
-                    wavesurfer.play();
-                }
-            }
         };
 
         wavesurfer.on('audioprocess', updateCurrentTime);
