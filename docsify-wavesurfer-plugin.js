@@ -414,7 +414,7 @@ function createTimeRatioContainer(wrapper) {
     Object.assign(timeRatioContainer.style, {
         display: 'none', // Hide by default
         position: 'absolute',
-        top: '90px',
+        top: '35px',
         left: '50%',
         transform: 'translateX(-50%)',
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
