@@ -51,24 +51,24 @@ function createWaveSurferPlayer(audioSrc, container, description = '') {
     const wrapper = createWrapper(container);
     const toolbarContainer = createToolbar(wrapper);
     const playPauseButton = createPlayPauseButton();
-    const wavesurfer = initializeWaveSurfer(wrapper, audioSrc, playPauseButton);
+    const descriptionLabel = createDescriptionLabel(description);
+    const wavesurfer = initializeWaveSurfer(wrapper, audioSrc, playPauseButton, descriptionLabel);
     const timeRatioContainer = createTimeRatioContainer(wrapper);
 
     if (description) {
-        const descriptionLabel = createDescriptionLabel(description, wavesurfer);
-        toolbarContainer.appendChild(descriptionLabel);
+        wrapper.appendChild(descriptionLabel);
     }
-
-    toolbarContainer.appendChild(createShowHideToolbarButton());
-    toolbarContainer.appendChild(playPauseButton);
 
     const controlsContainer = createControlsContainer(wavesurfer, playPauseButton, timeRatioContainer);
     wrapper.appendChild(controlsContainer);
 
+    const showHideButton = createShowHideToolbarButton(controlsContainer, playPauseButton);
+    toolbarContainer.appendChild(showHideButton);
+
     setInterval(() => updateCurrentTime(wavesurfer, timeRatioContainer), UPDATE_INTERVAL);
 }
 
-function initializeWaveSurfer(wrapper, audioSrc, playPauseButton) {
+function initializeWaveSurfer(wrapper, audioSrc, playPauseButton, descriptionLabel) {
     const waveColor = getComputedStyle(document.documentElement).getPropertyValue('--wave-color').trim() || DEFAULT_WAVE_COLOR;
     const progressColor = getComputedStyle(document.documentElement).getPropertyValue('--progress-color').trim() || DEFAULT_PROGRESS_COLOR;
 
@@ -80,10 +80,17 @@ function initializeWaveSurfer(wrapper, audioSrc, playPauseButton) {
     });
 
     wavesurfer.load(audioSrc);
-    wavesurfer.on('play', () => togglePlayPauseButton(playPauseButton, wavesurfer, true));
-    wavesurfer.on('pause', () => togglePlayPauseButton(playPauseButton, wavesurfer, false));
+    wavesurfer.on('play', () => {
+        togglePlayPauseButton(playPauseButton, wavesurfer, true);
+        toggleDescriptionButtonState(descriptionLabel, true);
+    });
+    wavesurfer.on('pause', () => {
+        togglePlayPauseButton(playPauseButton, wavesurfer, false);
+        toggleDescriptionButtonState(descriptionLabel, false);
+    });
 
     playPauseButton.onclick = () => togglePlayPause(wavesurfer);
+    descriptionLabel.onclick = () => togglePlayPause(wavesurfer);
 
     return wavesurfer;
 }
@@ -101,8 +108,15 @@ function togglePlayPauseButton(button, wavesurfer, isPlaying) {
     button.innerHTML = isPlaying ? '⏸️' : '▶️';
 }
 
+function toggleDescriptionButtonState(button, isPlaying) {
+    button.style.backgroundColor = isPlaying ? 'darkgrey' : 'rgba(255, 255, 255, 0.7)';
+    button.style.boxShadow = isPlaying ? 'inset 0px 0px 5px rgba(0,0,0,0.3)' : '0px 0px 5px rgba(0,0,0,0.3)';
+}
+
 function createPlayPauseButton() {
-    return createButton('▶️');
+    const button = createButton('▶️');
+    button.style.display = 'inline-block'; // Ensure the button is visible by default
+    return button;
 }
 
 function createWrapper(container) {
@@ -120,32 +134,34 @@ function createToolbar(wrapper) {
     const toolbarContainer = document.createElement('div');
     Object.assign(toolbarContainer.style, {
         position: 'absolute',
-        top: '5px',
+        bottom: '5px',
         left: '5px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        width: 'calc(100% - 10px)',
         zIndex: '10'
     });
     wrapper.appendChild(toolbarContainer);
     return toolbarContainer;
 }
 
-function createShowHideToolbarButton() {
+function createShowHideToolbarButton(controlsContainer, playPauseButton) {
     const settingsButton = createButton('⚙️');
-    settingsButton.onclick = (event) => {
-        const wrapper = event.currentTarget.closest('div').parentNode;
-        const toolbar = wrapper.querySelector('.controls-container');
-        toolbar.style.display = toolbar.style.display === 'block' ? 'none' : 'block';
+    settingsButton.onclick = () => {
+        const isVisible = controlsContainer.style.display === 'flex';
+        controlsContainer.style.display = isVisible ? 'none' : 'flex';
+        playPauseButton.style.display = isVisible ? 'none' : 'inline-block';
     };
     return settingsButton;
 }
 
-function createDescriptionLabel(description, wavesurfer) {
+function createDescriptionLabel(description) {
     const descriptionLabel = document.createElement('div');
     descriptionLabel.innerText = description;
     Object.assign(descriptionLabel.style, {
+        position: 'absolute',
+        top: '5px',
+        left: '5px',
+        zIndex: '15', // Ensure the label is above the waveform
         fontWeight: 'bold',
         backgroundColor: 'rgba(255, 255, 255, 0.7)',
         color: 'black',
@@ -153,10 +169,15 @@ function createDescriptionLabel(description, wavesurfer) {
         cursor: 'pointer',
         opacity: '0.9',
         fontSize: '12px',
-        marginRight: 'auto',
-        borderRadius: '5px' // Rounded corners
+        borderRadius: '5px', // Rounded corners
+        border: '1px solid black', // Button-like appearance
+        boxShadow: '0px 0px 5px rgba(0,0,0,0.3)', // Button-like shadow
+        maxWidth: 'calc(100% - 60px)', // Prevent overlap with the time ratio container
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'normal', // Allow wrapping
+        wordWrap: 'break-word' // Break long words
     });
-    descriptionLabel.onclick = () => togglePlayPause(wavesurfer);
     return descriptionLabel;
 }
 
@@ -164,13 +185,17 @@ function createControlsContainer(wavesurfer, playPauseButton, timeRatioContainer
     const controlsContainer = document.createElement('div');
     controlsContainer.className = 'controls-container';
     Object.assign(controlsContainer.style, {
-        display: 'none',
-        flexDirection: 'column',
+        display: 'none', // Hidden by default
+        flexDirection: 'row', // Change to row for single-line interface
         alignItems: 'center',
-        marginTop: '10px'
+        position: 'absolute',
+        bottom: '5px',
+        left: 'calc(5px + 30px)', // Adjust left position to be next to the settings icon
+        zIndex: '10'
     });
 
-    controlsContainer.appendChild(createTransportControls(wavesurfer, playPauseButton));
+    controlsContainer.appendChild(playPauseButton);
+    controlsContainer.appendChild(createTransportControls(wavesurfer));
     controlsContainer.appendChild(createSpeedControlContainer(wavesurfer));
     controlsContainer.appendChild(createVolumeControlContainer(wavesurfer));
 
@@ -178,17 +203,14 @@ function createControlsContainer(wavesurfer, playPauseButton, timeRatioContainer
     return controlsContainer;
 }
 
-function createTransportControls(wavesurfer, playPauseButton) {
+function createTransportControls(wavesurfer) {
     const transportControls = document.createElement('div');
     Object.assign(transportControls.style, {
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: '10px'
+        alignItems: 'center'
     });
 
     transportControls.appendChild(createGoToStartButton(wavesurfer));
-    transportControls.appendChild(playPauseButton);
     transportControls.appendChild(createLoopButton(wavesurfer));
     transportControls.appendChild(createTimeRatioToggleButton());
     transportControls.appendChild(createSpeedToggleButton());
@@ -204,7 +226,8 @@ function createButton(icon) {
         border: '1px solid black',
         borderRadius: '4px',
         cursor: 'pointer',
-        padding: '5px'
+        padding: '5px',
+        marginLeft: '5px' // Space between icons
     });
     button.innerHTML = icon;
     return button;
@@ -235,12 +258,14 @@ function createGoToStartButton(wavesurfer) {
 }
 
 function createSpeedToggleButton() {
-    const speedToggleBtn = createButton('⏱️');
+    const speedToggleBtn = createButton('⌛');
     speedToggleBtn.onclick = (event) => {
-        const controlsContainer = event.currentTarget.closest('div').parentNode;
+        const controlsContainer = event.currentTarget.closest('.controls-container');
         const speedControlContainer = controlsContainer.querySelector('.speed-control-container');
+        const volumeControlContainer = controlsContainer.querySelector('.volume-control-container');
         const isVisible = speedControlContainer.style.display === 'flex';
         speedControlContainer.style.display = isVisible ? 'none' : 'flex';
+        volumeControlContainer.style.display = 'none';
         speedToggleBtn.style.backgroundColor = isVisible ? '' : 'darkgrey';
     };
     return speedToggleBtn;
@@ -249,19 +274,21 @@ function createSpeedToggleButton() {
 function createVolumeToggleButton() {
     const volumeToggleBtn = createButton('🔊');
     volumeToggleBtn.onclick = (event) => {
-        const controlsContainer = event.currentTarget.closest('div').parentNode;
+        const controlsContainer = event.currentTarget.closest('.controls-container');
         const volumeControlContainer = controlsContainer.querySelector('.volume-control-container');
+        const speedControlContainer = controlsContainer.querySelector('.speed-control-container');
         const isVisible = volumeControlContainer.style.display === 'flex';
         volumeControlContainer.style.display = isVisible ? 'none' : 'flex';
+        speedControlContainer.style.display = 'none';
         volumeToggleBtn.style.backgroundColor = isVisible ? '' : 'darkgrey';
     };
     return volumeToggleBtn;
 }
 
 function createTimeRatioToggleButton() {
-    const timeRatioToggleBtn = createButton('🖇️');
+    const timeRatioToggleBtn = createButton('⏱️');
     timeRatioToggleBtn.onclick = (event) => {
-        const controlsContainer = event.currentTarget.closest('div').parentNode;
+        const controlsContainer = event.currentTarget.closest('.controls-container');
         const timeRatioContainer = controlsContainer.timeRatioContainer;
         const isVisible = timeRatioContainer.style.display === 'flex';
         timeRatioContainer.style.display = isVisible ? 'none' : 'flex';
@@ -277,11 +304,17 @@ function createSpeedControlContainer(wavesurfer) {
         display: 'none',
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: '10px',
-        width: '100%'
+        position: 'absolute',
+        bottom: '40px', // Position above the toolbar
+        left: '5px',
+        zIndex: '20',
+        width: 'calc(100% - 10px)',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        padding: '5px',
+        borderRadius: '5px'
     });
 
-    const speedLabel = createButton('⏱️');
+    const speedLabel = createButton('⌛');
     speedLabel.style.marginRight = '10px';
     speedControlContainer.appendChild(speedLabel);
 
@@ -357,7 +390,14 @@ function createVolumeControlContainer(wavesurfer) {
         display: 'none',
         flexDirection: 'row',
         alignItems: 'center',
-        width: '100%'
+        position: 'absolute',
+        bottom: '40px', // Position above the toolbar
+        left: '5px',
+        zIndex: '20',
+        width: 'calc(100% - 10px)',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        padding: '5px',
+        borderRadius: '5px'
     });
 
     const volumeLabel = createButton('🔊');
@@ -398,7 +438,7 @@ function createVolumeControl(wavesurfer) {
     volumeControl.style.margin = '0 10px';
     volumeControl.oninput = () => {
         wavesurfer.setVolume(volumeControl.value);
-        const volumeReadout = volumeControl.parentNode.querySelector('span');
+        const volumeReadout = volumeControl.parentNode.querySelector('.volume-readout');
         volumeReadout.innerHTML = padVolume((volumeControl.value * 100).toFixed(0)) + '%';
     };
     return volumeControl;
@@ -406,6 +446,7 @@ function createVolumeControl(wavesurfer) {
 
 function createVolumeReadout() {
     const volumeReadout = document.createElement('span');
+    volumeReadout.className = 'volume-readout';
     volumeReadout.innerHTML = padVolume('100%');
     Object.assign(volumeReadout.style, {
         fontFamily: 'monospace',
@@ -422,27 +463,31 @@ function createTimeRatioContainer(wrapper) {
     const timeRatioContainer = document.createElement('div');
     timeRatioContainer.className = 'time-ratio-container';
     Object.assign(timeRatioContainer.style, {
-        display: 'none', // Hide by default
+        display: 'none', // Hidden by default
+        flexDirection: 'column',
+        alignItems: 'flex-end',
         position: 'absolute',
-        top: '35px',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        top: '5px',
+        right: '5px',
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
         padding: '5px',
         borderRadius: '5px',
-        textAlign: 'center',
+        textAlign: 'right',
         fontSize: '10px',
         whiteSpace: 'nowrap',
         lineHeight: '1', // Set to 1 for the height to match the font size
         zIndex: '20' // Ensure it is rendered over the waveform
     });
 
-    const ratioLabel = createRatioLabel();
-    timeRatioContainer.appendChild(ratioLabel);
+    const currentTimeLabel = createRatioLabel();
+    const durationLabel = createRatioLabel();
+    timeRatioContainer.appendChild(currentTimeLabel);
+    timeRatioContainer.appendChild(durationLabel);
 
     wrapper.appendChild(timeRatioContainer);
 
-    timeRatioContainer.ratioLabel = ratioLabel;
+    timeRatioContainer.currentTimeLabel = currentTimeLabel;
+    timeRatioContainer.durationLabel = durationLabel;
 
     // Pass clicks through the time ratio container to the waveform
     timeRatioContainer.onclick = event => {
@@ -465,7 +510,11 @@ function createRatioLabel() {
 
 function updateCurrentTime(wavesurfer, timeRatioContainer) {
     const currentTime = wavesurfer.getCurrentTime();
-    timeRatioContainer.ratioLabel.innerHTML = formatTime(currentTime) + ' / ' + formatTime(wavesurfer.getDuration());
+    const duration = wavesurfer.getDuration();
+    if (timeRatioContainer.currentTimeLabel.innerHTML !== formatTime(currentTime) || timeRatioContainer.durationLabel.innerHTML !== formatTime(duration)) {
+        timeRatioContainer.currentTimeLabel.innerHTML = formatTime(currentTime);
+        timeRatioContainer.durationLabel.innerHTML = formatTime(duration);
+    }
 }
 
 function padVolume(volume) {
