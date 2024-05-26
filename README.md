@@ -12,7 +12,7 @@ Additionally, it displays the link description as the title of the audio and as 
 ```
 ### into wavesurfer player
 
-[demonstrative](./media/demonstrative.mp3)
+[demonstrative](media/demonstrative.mp3)
 
 ### [examples](./examples.md)
 
@@ -44,6 +44,24 @@ Add the plugin as module to your docsify index.html document
 </script>
 ```
 
+### hook the plugin
+```
+  <script>
+    window.$docsify = {
+      name: '',
+      repo: '',
+      plugins: [
+        function(hook, vm) {
+          hook.doneEach(() => {
+            import('./docsify-wavesurfer-plugin.js').then(module => {
+              module.initWaveSurfer();
+            }).catch(err => console.error('Failed to load WaveSurfer plugin', err));
+          });
+        }
+      ]
+    };
+  </script>
+```
 ### create links to audio in md
 
 ```markdown

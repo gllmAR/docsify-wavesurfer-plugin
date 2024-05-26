@@ -7,6 +7,7 @@ const DEFAULT_PROGRESS_COLOR = '#aaaaaa';
 const UPDATE_INTERVAL = 100; // 100ms for updating the current time
 
 export function initWaveSurfer() {
+    console.log('Initializing WaveSurfer');
     handleAudioTags();
     handleAudioLinks();
 }
@@ -28,7 +29,7 @@ function handleAudioLinks() {
     links.forEach(link => {
         const url = link.href.toLowerCase();
         if (SUPPORTED_AUDIO_EXTENSIONS.some(ext => url.endsWith(ext))) {
-            const audioSrc = link.href.replace(/#\//, '');
+            const audioSrc = resolveUrl(link.getAttribute('href'));
             const description = link.innerText || link.textContent;
             const container = document.createElement('div');
             link.parentNode.replaceChild(container, link);
@@ -36,6 +37,15 @@ function handleAudioLinks() {
         }
     });
 }
+
+function resolveUrl(href) {
+    const base = window.location.href.split('#')[0]; // Get the base URL without the hash
+    const resolvedUrl = new URL(href, base).href.replace('/#/', '/'); // Replace the hash part correctly
+    console.log('Base URL:', base); // Debug output
+    console.log('Resolved URL:', resolvedUrl); // Debug output
+    return resolvedUrl;
+}
+
 
 function createWaveSurferPlayer(audioSrc, container, description = '') {
     const wrapper = createWrapper(container);
@@ -56,43 +66,6 @@ function createWaveSurferPlayer(audioSrc, container, description = '') {
     wrapper.appendChild(controlsContainer);
 
     setInterval(() => updateCurrentTime(wavesurfer, timeRatioContainer), UPDATE_INTERVAL);
-}
-
-function createWrapper(container) {
-    const wrapper = document.createElement('div');
-    Object.assign(wrapper.style, {
-        position: 'relative',
-        minWidth: '264px',
-        minHeight: '60px'
-    });
-    container.appendChild(wrapper);
-    return wrapper;
-}
-
-function createToolbar(wrapper) {
-    const toolbarContainer = document.createElement('div');
-    Object.assign(toolbarContainer.style, {
-        position: 'absolute',
-        top: '5px',
-        left: '5px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: 'calc(100% - 10px)',
-        zIndex: '10'
-    });
-    wrapper.appendChild(toolbarContainer);
-    return toolbarContainer;
-}
-
-function createShowHideToolbarButton() {
-    const settingsButton = createButton('⚙️');
-    settingsButton.onclick = (event) => {
-        const wrapper = event.currentTarget.closest('div').parentNode;
-        const toolbar = wrapper.querySelector('.controls-container');
-        toolbar.style.display = toolbar.style.display === 'block' ? 'none' : 'block';
-    };
-    return settingsButton;
 }
 
 function initializeWaveSurfer(wrapper, audioSrc, playPauseButton) {
@@ -130,6 +103,43 @@ function togglePlayPauseButton(button, wavesurfer, isPlaying) {
 
 function createPlayPauseButton() {
     return createButton('▶️');
+}
+
+function createWrapper(container) {
+    const wrapper = document.createElement('div');
+    Object.assign(wrapper.style, {
+        position: 'relative',
+        minWidth: '264px',
+        minHeight: '60px'
+    });
+    container.appendChild(wrapper);
+    return wrapper;
+}
+
+function createToolbar(wrapper) {
+    const toolbarContainer = document.createElement('div');
+    Object.assign(toolbarContainer.style, {
+        position: 'absolute',
+        top: '5px',
+        left: '5px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: 'calc(100% - 10px)',
+        zIndex: '10'
+    });
+    wrapper.appendChild(toolbarContainer);
+    return toolbarContainer;
+}
+
+function createShowHideToolbarButton() {
+    const settingsButton = createButton('⚙️');
+    settingsButton.onclick = (event) => {
+        const wrapper = event.currentTarget.closest('div').parentNode;
+        const toolbar = wrapper.querySelector('.controls-container');
+        toolbar.style.display = toolbar.style.display === 'block' ? 'none' : 'block';
+    };
+    return settingsButton;
 }
 
 function createDescriptionLabel(description, wavesurfer) {
@@ -442,8 +452,6 @@ function createTimeRatioContainer(wrapper) {
     return timeRatioContainer;
 }
 
-
-
 function createRatioLabel() {
     const ratioLabel = document.createElement('span');
     ratioLabel.className = 'ratio-label';
@@ -477,4 +485,3 @@ window.$docsify.plugins = [].concat(function (hook, vm) {
         initWaveSurfer();
     });
 }, window.$docsify.plugins);
-

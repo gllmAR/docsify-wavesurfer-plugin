@@ -8,10 +8,10 @@
   <!-- <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify/themes/dark.min.css" /> -->
   <link rel="stylesheet" href="https://tim-montmorency.com/presentation/css/tim-dark.css" />
   <style>
-    /* :root {
+    :root {
       --wave-color: #ababab;
       --progress-color: #dadada;
-    } */
+    }
   </style>
 </head>
 <body>
@@ -20,13 +20,17 @@
     window.$docsify = {
       name: '',
       repo: '',
-      plugins: []
+      plugins: [
+        function(hook, vm) {
+          hook.doneEach(() => {
+            import('./docsify-wavesurfer-plugin.js').then(module => {
+              module.initWaveSurfer();
+            }).catch(err => console.error('Failed to load WaveSurfer plugin', err));
+          });
+        }
+      ]
     };
   </script>
   <script src="https://unpkg.com/docsify/lib/docsify.min.js"></script>
-  <script type="module">
-    import { initWaveSurfer } from './docsify-wavesurfer-plugin.js';
-    initWaveSurfer();
-  </script>
 </body>
 </html>
