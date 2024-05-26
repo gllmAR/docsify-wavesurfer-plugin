@@ -17,9 +17,10 @@ function handleAudioTags() {
     audios.forEach(audio => {
         const audioSrc = audio.querySelector('source')?.src;
         if (audioSrc) {
+            const description = audio.innerText.trim(); // Extract the description from the text node
             const container = document.createElement('div');
             audio.parentNode.replaceChild(container, audio);
-            createWaveSurferPlayer(audioSrc, container);
+            createWaveSurferPlayer(audioSrc, container, description);
         }
     });
 }
@@ -45,7 +46,6 @@ function resolveUrl(href) {
     console.log('Resolved URL:', resolvedUrl); // Debug output
     return resolvedUrl;
 }
-
 
 function createWaveSurferPlayer(audioSrc, container, description = '') {
     const wrapper = createWrapper(container);

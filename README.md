@@ -67,13 +67,13 @@ Additionally, it displays the link description as the title of the audio and as 
 ```
 <audio>
   <source src="./media/demonstrative.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
+  this is the description label
 </audio>
 
 ```
 <audio>
   <source src="./media/demonstrative.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
+  this is the description label
 </audio>
 
 
