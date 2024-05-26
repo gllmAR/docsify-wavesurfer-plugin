@@ -32,20 +32,9 @@ Additionally, it displays the link description as the title of the audio and as 
 
 ### import module
 
-Add the plugin as module to your docsify index.html document
-
 ```html
-<!-- Docsify -->
-<script src="https://unpkg.com/docsify/lib/docsify.min.js"></script>
-<!-- Docsify WaveSurfer plugin  -->
-<script type="module">
-  import { initWaveSurfer } from 'https://gllmar.github.io/docsify-wavesurfer-plugin/docsify-wavesurfer-plugin.js';
-  initWaveSurfer();
-</script>
-```
-
-### hook the plugin
-```
+<body>
+  <div id="app"></div>
   <script>
     window.$docsify = {
       name: '',
@@ -61,7 +50,10 @@ Add the plugin as module to your docsify index.html document
       ]
     };
   </script>
+  <script src="https://unpkg.com/docsify/lib/docsify.min.js"></script>
+</body>
 ```
+
 ### create links to audio in md
 
 ```markdown
