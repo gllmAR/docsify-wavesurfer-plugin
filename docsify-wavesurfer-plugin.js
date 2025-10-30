@@ -40,11 +40,22 @@ function handleAudioLinks() {
 }
 
 function resolveUrl(href) {
-    const base = window.location.href.split('#')[0]; // Get the base URL without the hash
-    const resolvedUrl = new URL(href, base).href.replace('/#/', '/'); // Replace the hash part correctly
-    console.log('Base URL:', base); // Debug output
-    console.log('Resolved URL:', resolvedUrl); // Debug output
-    return resolvedUrl;
+  const base = window.location.href.split('#')[0]; // Base URL without hash
+  let resolvedUrl = new URL(href, base).href;
+
+  // Convert hash-based paths like /#/path → /path
+  resolvedUrl = resolvedUrl.replace('/#/', '/');
+
+  // Remove index.html or index.htm (case-insensitive)
+  resolvedUrl = resolvedUrl.replace(/\/index\.html?$/i, '/');
+
+  // Also handle if index.html appears before a hash (e.g. index.html#/path)
+  resolvedUrl = resolvedUrl.replace(/\/index\.html?#\//i, '/');
+
+  console.log('Base URL:', base);
+  console.log('Resolved URL:', resolvedUrl);
+
+  return resolvedUrl;
 }
 
 function createWaveSurferPlayer(audioSrc, container, description = '') {
